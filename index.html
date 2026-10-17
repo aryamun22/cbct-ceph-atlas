@@ -1,0 +1,551 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>CBCT Ceph Atlas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f6f4; --surface:#ffffff; --ink:#1b232c; --ink2:#4d5966; --mute:#7d8894; --line:#d9dee3;
+  --accent:#1e6b86; --accent-soft:#dcecf2; --ok:#3a7a4c; --warn:#b8811f; --bad:#b0392c; --bad-soft:#f6e3e0; --warn-soft:#f7ecd6; --ok-soft:#e1efe4;
+  --hard:#e0563c; --soft:#2f8fb8; --ghost:#9aa5b1; --canvas:#0b1014; --bone:#e9e2d3;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12181e; --surface:#1a222b; --ink:#e7ebee; --ink2:#b5bfc8; --mute:#8a96a2; --line:#2c3742;
+  --accent:#5fb0cf; --accent-soft:#1d3440; --ok:#6fbf84; --warn:#d9a54a; --bad:#e2725f; --bad-soft:#3b2320; --warn-soft:#3a2f18; --ok-soft:#1f3326;
+  --hard:#ff7a5c; --soft:#5fb7de; --ghost:#5b6874; --canvas:#07090c; --bone:#e9e2d3;
+}}
+:root[data-theme="dark"]{
+  --bg:#12181e; --surface:#1a222b; --ink:#e7ebee; --ink2:#b5bfc8; --mute:#8a96a2; --line:#2c3742;
+  --accent:#5fb0cf; --accent-soft:#1d3440; --ok:#6fbf84; --warn:#d9a54a; --bad:#e2725f; --bad-soft:#3b2320; --warn-soft:#3a2f18; --ok-soft:#1f3326;
+  --hard:#ff7a5c; --soft:#5fb7de; --ghost:#5b6874; --canvas:#07090c; --bone:#e9e2d3;
+}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.5;margin:0;padding-block:0 60px;padding-inline:16px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;text-wrap:balance;margin:0}
+h1{font-size:2.1rem;line-height:1.15} h2{font-size:1.45rem;margin-top:6px} h3{font-size:1.05rem}
+p{max-width:70ch}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{padding-block:34px 18px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.meta{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 18px}
+section{padding-block:32px 8px;border-bottom:1px solid var(--line);display:grid;gap:14px}
+.lead{font-size:1.05rem;color:var(--ink2)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:4px;border-left:4px solid var(--line)}
+.tile.bad{border-left-color:var(--bad)} .tile.warn{border-left-color:var(--warn)} .tile.ok{border-left-color:var(--ok)}
+.tile .k{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.tile .v{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.tile .n{font-size:.84rem;color:var(--ink2)}
+.pill{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.04em;padding:1px 8px;border-radius:999px;text-transform:uppercase}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.na{background:var(--accent-soft);color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;background:var(--surface)}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);font-weight:600}
+td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sel td{background:var(--accent-soft)}
+tbody tr[data-key]{cursor:pointer} tbody tr[data-key]:hover td{background:var(--accent-soft)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+#tablist{min-width:0} section{grid-template-columns:minmax(0,1fr)}
+.lbl:hover,.lbl:focus-visible{z-index:6 !important}
+.note{background:var(--accent-soft);border-radius:6px;padding:12px 14px;font-size:.9rem}
+.callout{border-left:4px solid var(--bad);padding:8px 14px;background:var(--surface);border-radius:0 6px 6px 0}
+ul{margin:0;padding-left:20px} li{margin-bottom:4px}
+button,select,input[type=search]{font:inherit;font-size:.82rem;padding:5px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,.lbl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* viewer */
+.viewer{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+@media(max-width:900px){.viewer{grid-template-columns:1fr}}
+.stage{position:relative;background:var(--canvas);border-radius:8px;overflow:hidden;height:min(72vh,720px);min-height:420px}
+.stage canvas{display:block;width:100%;height:100%}
+.labels{position:absolute;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:2px 5px;white-space:nowrap;user-select:none}
+.lbl.bone{border-color:rgba(255,122,92,.8)} .lbl.soft{border-color:rgba(95,183,222,.8)}
+.lbl.sel{background:var(--accent);border-color:#fff;color:#fff;font-weight:600;z-index:3}
+.lbl.dim{opacity:.35}
+.lbl::before{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:inherit;display:none}
+.hud{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-wrap:wrap;gap:6px;z-index:4}
+.hud button,.hud select{font-size:.75rem;padding:4px 8px;background:rgba(20,26,32,.85);color:#e8ecf0;border-color:#3a4652}
+.hud button[aria-pressed="true"]{border-color:#8fd3f4;color:#8fd3f4}
+.status{position:absolute;left:10px;bottom:10px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:#9aa5b1;z-index:4}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:10px;align-content:start;max-height:min(72vh,720px);overflow:auto}
+.panel h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel .sub{font-size:.8rem;color:var(--mute)}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+.mrow:hover{background:var(--accent-soft)}
+.mrow .name{font-size:.86rem} .mrow .an{font-size:.72rem;color:var(--mute)}
+.mrow .val{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;font-size:.9rem}
+.mrow .z{font-size:.72rem;text-align:right}
+.bar{grid-column:1/-1;height:4px;background:var(--line);border-radius:2px;position:relative;margin-top:2px}
+.bar i{position:absolute;top:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
+.bar b{position:absolute;left:50%;top:-1px;width:1px;height:6px;background:var(--mute)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--ink2)}
+.legend span::before{content:"";display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle;background:var(--c)}
+.two{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.two>*{min-width:0}
+@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.search{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search input{min-width:220px;flex:1}
+@media (prefers-reduced-motion:reduce){ .stage{scroll-behavior:auto} }
+/* site nav + plan sections */
+.topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px;display:flex;gap:4px 14px;flex-wrap:wrap;font-size:.82rem}
+.topnav a{color:var(--ink2);text-decoration:none;padding:2px 0;border-bottom:2px solid transparent}
+.topnav a:hover,.topnav a:focus-visible{color:var(--accent);border-bottom-color:var(--accent);outline:none}
+section[id]{scroll-margin-top:52px}
+.step{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:"IBM Plex Mono",monospace;font-size:.75rem;font-weight:600}
+td.good{color:var(--ok)} td.warnc{color:var(--warn)} td.badc{color:var(--bad)}
+.barcell{min-width:120px}
+.hbar{height:10px;border-radius:2px;background:var(--accent);opacity:.85}
+.hbar.ret{background:var(--ok)}
+.disclaimer{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--surface);border-radius:0 6px 6px 0;padding:10px 14px;font-size:.88rem;color:var(--ink2)}
+.kicker{font-size:.95rem;color:var(--ink)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">CBCT cephalometric re-analysis · version 2 · adult male, 22 · Planmeca Viso G7 · 0.45 mm</div>
+  <h1>CBCT Ceph Atlas</h1>
+  <p class="lead">Full re-landmarking of one head CBCT by independent agents (two landmarkers per region, one adversarial verifier per landmark, sourced adult-male norms, two adversarial re-derivations of every number). This version supersedes the first study, which contained landmark and norm errors listed at the bottom. Click any label on the skull, or any row in the tables, to see the measurements that use it.</p>
+  <div class="meta"><span id="meta-lm"></span><span id="meta-ms"></span><span>FH fit residual 0.16 mm</span><span>scanner pitch 3.9° chin-down vs FH · roll 1.6°</span><span id="meta-mesh">model loading…</span></div>
+  <div class="disclaimer"><b>Released openly by the person scanned.</b> Bone surface and measurements only — no name, date of birth, record numbers or facial photographs. The treatment sections are computer simulations built to explore options; they are planning-grade estimates, not a prescription and not medical advice.</div>
+</header>
+<nav class="topnav" aria-label="Sections">
+  <a href="#viewer">3D skull</a><a href="#verdict">Diagnosis</a><a href="#strengths">Strengths</a><a href="#gall">GALL</a><a href="#plan">Movement plan</a><a href="#height">Facial height</a><a href="#expansion">Expansion</a><a href="#tables">All measurements</a><a href="#method">Method</a><a href="sandbox/">Surgery sandbox</a>
+</nav>
+
+<section id="viewer">
+  <div class="eyebrow">Interactive skull</div>
+  <h2>Bone surface with every landmark, in the Frankfort frame</h2>
+  <div class="viewer">
+    <div class="stage" id="stage">
+      <canvas id="c" aria-label="3D bone surface from the CBCT with clickable landmarks"></canvas>
+      <div class="labels" id="labels"></div>
+      <div class="hud">
+        <button id="b-spin" aria-pressed="true">Auto-rotate</button>
+        <button id="b-bone" aria-pressed="true">Bone labels</button>
+        <button id="b-soft" aria-pressed="true">Soft-tissue labels</button>
+        <button id="b-refs" aria-pressed="true">Reference lines</button>
+        <button id="b-xray" aria-pressed="false">X-ray</button>
+        <button id="b-front">Front</button><button id="b-side">Side</button><button id="b-three">¾</button>
+      </div>
+      <div class="status" id="status">loading model…</div>
+    </div>
+    <div class="panel" id="panel">
+      <h3><span id="p-title">Pick a landmark</span><span class="sub" id="p-sub"></span></h3>
+      <div class="sub" id="p-desc">Orange labels are bone, blue are skin. Coordinates are mm from nasion in the Frankfort frame (lateral, superior, anterior). Vertical lines in the midline are the reference verticals: N-perp, bony glabella, soft glabella (= Andrews GALL here), FALL, and the Arnett true vertical through subnasale.</div>
+      <div id="p-list"></div>
+    </div>
+  </div>
+  <div class="legend"><span style="--c:var(--hard)">bone landmark</span><span style="--c:var(--soft)">soft-tissue landmark</span><span style="--c:#8fd3f4">reference verticals</span><span style="--c:#ffd166">FH plane / S–N / mandibular plane / occlusal plane / E-line</span><span style="--c:#7cffb2">selected measurement</span></div>
+</section>
+
+<section id="verdict">
+  <div class="eyebrow">Corrected diagnosis</div>
+  <h2 id="h-verdict"></h2>
+  <div class="grid" id="tiles"></div>
+  <ul id="headline"></ul>
+</section>
+
+<section id="strengths">
+  <div class="eyebrow">Already at the strong end</div>
+  <h2>The parts of the skeleton that need nothing</h2>
+  <p>The outer frame and the back half of the face — ramus, angle, jaw length, cheekbone width, chin, symmetry — are the hard-to-build parts, and they are already at or beyond the male norm. What is off is the front-middle: a maxilla that is narrow and a few millimetres back, a short upper lip and midface, and the bite. Three of these strengths (flat jaw plane, high posterior height ratio, forward chin) are one horizontal growth pattern; they read as strength once the front of the face has the height and projection to match them.</p>
+  <div class="tblwrap"><table id="strtable"></table></div>
+</section>
+
+<section id="gall">
+  <div class="eyebrow">The "15 mm behind" question</div>
+  <h2>Andrews' GALL: where the maxilla and incisors sit relative to the forehead</h2>
+  <div class="two">
+    <div>
+      <p><b>Rule (Andrews, Six Elements, Element II; sourced via Wu et al. 2023 and the Andrews 2008/2015 papers).</b> The Goal Anterior Limit Line is a true vertical in natural head position. It passes through the forehead's FFA point (the midpoint of the clinical forehead) when the forehead inclination is ≤ 7°; for every degree beyond 7° it moves 0.6 mm forward, but never beyond glabella. The FA point of the maxillary central incisor should sit on it.</p>
+      <p><b>Applied here.</b> Forehead inclination <span id="g-inc"></span>° (scanner vertical) / <span id="g-incfh"></span>° (Frankfort frame). The adjustment (<span id="g-adj"></span> mm) exceeds the FFA-to-glabella gap (<span id="g-gap"></span> mm), so the cap applies: <b>the GALL is the glabellar vertical</b>, <span id="g-ant"></span> mm anterior of nasion. The cap is reached at any inclination above 18°, so the GALL does not depend on the forehead being clipped by the field of view above <span id="g-sup"></span> mm (a trichion-based inclination of 25–29° would move it by at most ~1 mm).</p>
+      <div class="note" id="g-note"></div>
+    </div>
+    <div class="tblwrap"><table id="reftable"></table></div>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="eyebrow">Simulated movement plan</div>
+  <h2>Maxilla wider, forward and longer; mandible left where it is</h2>
+  <p>Built in a rigid-body surgical simulator on the landmarks above, after three competing plans (Andrews + airway, Arnett soft-tissue harmony, maximum vertical) were scored by an aesthetics judge and a stability/airway judge and merged; about 420 simulator runs, independently re-derived to 0.02 mm. Constraints: the pharyngeal airway is small (70 mm² minimum cross-section), so the mandible may not move back more than 2 mm; natural head position was not recorded, so position-against-the-forehead numbers are given at 0°, 3.9° and 8° chin-down.</p>
+  <div class="tblwrap"><table id="movetable"></table></div>
+  <h3 style="margin-top:6px">What it produces</h3>
+  <div class="tblwrap"><table id="outtable"></table></div>
+  <div class="two">
+    <div>
+      <h3>Considered and rejected</h3>
+      <ul>
+        <li><b>Mandibular setback.</b> To close the bite alone it takes B 5.7 mm and pogonion 5.1 mm back — over the airway limit — and leaves the midface flat and the face no longer.</li>
+        <li><b>Chin advancement.</b> The chin is already the most forward point of the face.</li>
+        <li><b>Le Fort II / III.</b> Over-projects the upper midface (orbital rim to +1.6–2.7 SD) with a 10 mm nasofrontal step; the rims are not truly deficient — a 3 mm onlay covers them.</li>
+        <li><b>High (quadrangular) Le Fort I.</b> Subpupil area overshoots; reported vertical relapse 62–158 %.</li>
+        <li><b>Rotation-only plans</b> (downgraft without advance). Chin 4–7 mm back, bite still Class III, airway worse.</li>
+        <li><b>Inverted-L ramus lengthening.</b> Flattens an already flat jaw plane on an already long ramus.</li>
+        <li><b>Malar implants.</b> Cheekbone projection is already at the norm.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Before anything is fixed</h3>
+      <ul>
+        <li><b>Natural head position</b> — one profile photograph with a plumb line. The advance is right for ~4° chin-down; at a level Frankfort posture it should drop to 4.5–5 mm.</li>
+        <li><b>A scan after expansion</b> — whatever the expander actually drops and drifts the maxilla changes the Le Fort I by several millimetres; totals stay the same.</li>
+        <li><b>A sleep study</b> — moderate or severe sleep apnoea would favour a larger bimaxillary advance at the cost of the chin and incisor targets.</li>
+      </ul>
+      <p class="sub">Sequence: expansion (≈1 month active, 6 months retention) → orthodontics 9–14 months → one operation → orthodontics 6–9 months → stage-2 implants and nose 6–12 months later. About 2–2.5 years.</p>
+    </div>
+  </div>
+</section>
+
+<section id="height">
+  <div class="eyebrow">Closing the facial-height deficit</div>
+  <h2>Face height to the male mean; the ratio still reads broad</h2>
+  <p>A second round extended the simulator (lower-border osteotomies, vertical implants, lip and incisor-intrusion controls, parallel downgrade with the mandible following) and ran three height strategies through the same judges. The recommended stack, on top of the plan above: <b>vertical genioplasty 7.0 mm</b> (was 4.5), <b>anterior downgraft 4.0 mm</b> grafted (was 2.5) with 0.8 mm upper-incisor intrusion and 1.8 mm lower-incisor extrusion, posterior maxilla +0.5 mm instead of 1.0 mm impaction, bite seated at 2.5 mm overjet. No new implants, no ramus surgery.</p>
+  <div class="two">
+    <div class="tblwrap"><table id="segtable"></table></div>
+    <div class="tblwrap"><table id="laddertable"></table></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Why it stops there</h3>
+      <ul>
+        <li><b>The missing height is above the jaws.</b> Midface (soft nasion to subnasale) and upper-lip length are the short segments; no jaw operation lengthens either, and the lip gains about 1 mm.</li>
+        <li><b>Lip seal is the binding limit.</b> Each extra millimetre of downgraft parts the lips about 0.6 mm; the stack sits at a 3.3 mm gap, borderline at the worst soft-tissue bound, settling to 2.4.</li>
+        <li><b>Tooth show is capped</b> at about 4 mm; more downgraft needs more intrusion than orthodontics delivers.</li>
+        <li><b>The chin is at its norm</b> at 7 mm; more makes it long.</li>
+        <li><b>The ramus cannot follow</b> a larger parallel downgraft without a 4 mm step or a stretched sling.</li>
+        <li>About a quarter of the gain is the lips parting rather than tissue, and every millimetre lands below the nose, so the upper-to-lower third ratio moves from 0.89 to 0.80.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The index against several male norms</h3>
+      <div class="tblwrap"><table id="indextable"></table></div>
+      <p class="sub">Part of the gap is definition: measured from bony-nasion level the same face reads 88.7 at surgery. The rest is soft cheekbone width (144.8 mm), not height. Leanness (≈3 mm less soft width) would add ≈1.7 index points; zygomatic reduction was rejected because it narrows the cheekbones the plan keeps.</p>
+    </div>
+  </div>
+</section>
+
+<section id="expansion">
+  <div class="eyebrow">Maxillary expansion</div>
+  <h2>What 10 mm of expansion does on its own — and whether it can replace the Le Fort I</h2>
+  <div class="two">
+    <div>
+      <p><b>Screw opening is not bone.</b> Meta-analyses of bone-borne expanders in late adolescents and adults: the suture splits in ≈93 % of cases; the gain is ≈49 % basal bone, ≈8 % alveolar and ≈43 % tooth tipping, with a typical basal gain of 2.3 mm (1.7–3.0). Surgically assisted expansion in adults gives ≈7.5 mm at the molars with ≈3.5 mm skeletal and ≈30 % dental relapse. Ten millimetres of activation therefore puts roughly five into the basal bone; closing the full transverse deficit may need over-expansion and a second step.</p>
+      <p><b>What happens to the rest of the face depends on how far the maxilla drops and drifts while it widens.</b> With the mandible left to find its own bite, every millimetre of drop props the jaw open on the back teeth, swinging the chin down and back. That looks like progress — a longer face, a smaller Class III — but the front teeth stop meeting and the tongue base moves back. The airway limit here is 2 mm.</p>
+    </div>
+    <div class="tblwrap"><table id="exptable"></table></div>
+  </div>
+  <h3>Can expansion, with or without a facemask, remove the need for a Le Fort I?</h3>
+  <div class="tblwrap"><table id="nolftable"></table></div>
+  <p class="kicker"><b>Mostly no.</b> A typical response leaves the bite skeletally Class III with the front teeth apart. A strong response can close the bite on paper, but most of the correction comes from the mandible swinging 3.7–5 mm back — the move the airway rules out — with the midface forward 2–5 mm instead of 8 and 5+ mm of tooth showing once the incisors are uprighted. A large expander response shrinks the Le Fort I (to ≈4 mm advance with posterior impaction if it gives 4 mm down / 3 mm forward) rather than deleting it. Decide on the post-expansion scan and the sleep study.</p>
+</section>
+
+<section id="tables">
+  <div class="eyebrow">All measurements</div>
+  <h2 id="h-tables">Measurements against adult-male norms</h2>
+  <div class="search"><input type="search" id="q" placeholder="filter measurements (e.g. ramus, TVL, Wits)" aria-label="Filter measurements"><select id="an-sel"><option value="">all analyses</option></select><span class="sub" id="count"></span></div>
+  <p class="sub">z = (value − male norm) / SD. Rows without a valid SD show no z. Click a row to highlight its landmarks on the skull. McNamara linear norms carry ~8 % cephalometric magnification and those values are shown ×1.08; Jarabak linear norms are compared unscaled (magnification unknown), so their length z-scores read ~0.5–1 SD low.</p>
+  <div id="tablist"></div>
+</section>
+
+<section id="method">
+  <div class="eyebrow">Method and corrections</div>
+  <h2>How this version was produced, and what changed</h2>
+  <div class="two">
+    <div>
+      <h3>Pipeline</h3>
+      <ul>
+        <li>Volume: 668×668×445 voxels, 0.45 mm isotropic, HU-calibrated. Bone threshold 400 HU, skin −450 HU.</li>
+        <li>Landmarking: for each of four regions, two agents located every landmark independently — one by reading thin slices in three planes, one algorithmically from the volume — without access to any earlier result.</li>
+        <li>Verification: one adversarial agent per landmark re-rendered both candidates in three planes, re-derived the point from its definition, and chose or corrected it; each verifier's note records the disagreement between the two candidates and what structure the final point sits on.</li>
+        <li>Frame: Frankfort plane by least squares through both porions and orbitale (residuals ≤ 0.2 mm); midsagittal plane perpendicular to FH through nasion and sella.</li>
+        <li>Norms: adult-male means and SDs with sources (Steiner, McNamara, Ricketts, Holdaway, Jarabak/Björk, Tweed, Legan–Burstone, Arnett STCA, Farkas, Penn, Andrews). Where only pooled or range values exist, the table says so and gives no z.</li>
+        <li>Checks: two independent agents re-derived the frame, every coordinate and every headline number from the landmark voxels. Round 1 found eleven issues (occlusal-plane contact point, an alar landmark definition mismatch, unverifiable SDs for U1-NA/L1-NB and the Jarabak ratio, a missing Ricketts row, the Holdaway chin-thickness definition, the U1-to-A-vertical measuring point, the provisional facial axis, the facial-index classification, a yaw sign and an overbite sign in notes); all were corrected in round 2. A third pass checked this page against the analysis file.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Corrections versus the first version of this study</h3>
+      <ul>
+        <li><b>Arnett midface norms:</b> the first version compared the orbital rim, cheekbone and subpupil points with the <i>female</i> norms (−18.7, −20.6, −14.8). The male norms are −22.4, −25.2, −18.4. The "5–9 mm infraorbital deficit" shrinks to 2–3 mm at the rim (about 1 SD) and ~4 mm under the pupil (4.6 R / 3.9 L); the cheekbone point reads normal but sits 5 mm from the subpupil point on the same slope, so the honest summary is one infraorbital reading 1–2 SD behind.</li>
+        <li><b>Pogonion</b> was 2.8 mm too posterior; <b>nasion</b> is now on the frontonasal suture, 4.5 mm above the concavity point used before; <b>zygion</b> was on temporal bone (bony Zy–Zy 132.1, not 141); <b>overjet/overbite</b> are 0.6 / −0.6 (edge-to-edge), not 1.5 / 3.5; <b>chin pad</b> is 14–15 mm (normal), not 17; <b>nasolabial angle</b> ≈ 65° (range 59–73 by construction), not 97°.</li>
+        <li><b>Ramus:</b> Ar–Go 58 mm is +2.8 SD on Björk's norm — long, not "normal". <b>Gonial angle</b> Co-Go-Me 121°, not 117°; Ar-Go-Me 128° (norm 130 ± 6, normal).</li>
+        <li><b>Diagnosis</b> moves from "mandible normal, maxilla neutral" to an <b>8–12 mm Class III jaw discrepancy</b>: mildly retrusive maxilla (SNA 79.4, A −1.6 to N-perp, −10.9 to the GALL where a balanced male sits at −7 to −10), a mandible of normal length (Co–Gn 130 mm ×1.08 vs 134 ± 7) rotated forward by a horizontal growth pattern (FMA 14.5°, Björk sum 383°, S-Go:N-Me 73 %) so that the chin reads +11.8 mm to N-perp in the Frankfort frame, ≈ +4.8 mm at the scanned pitch, and +2.5 mm to the GALL where a balanced male sits at ≈ −9; brachyfacial; maxillary transverse deficiency; narrow airway. Whether the chin is called "prognathic" depends on the reference; on every reference with a norm it is 4–12 mm ahead, and the jaw discrepancy does not change.</li>
+        <li>Remaining low-confidence items: columella point (conf 0.5, ±2 mm along the columella, so the nasolabial angle is approximate), Pt point (facial axis provisional), antegonial notches (absent), left alar base (alare landmarked, Arnett norm not applied), thin bone (ANS, sella floor) not fully rendered in the 3D model.</li>
+      </ul>
+    </div>
+  </div>
+  <h3 style="margin-top:8px">What a completeness critic flagged, and what is still missing</h3>
+  <div class="two">
+    <ul>
+      <li><b>Framing.</b> "Retrusive maxilla" rests on SNA (which is depressed ~2° by the steep 8.8° SN–FH); the Frankfort- and Arnett-based maxillary rows are all within 1 SD. The maxillary deficit is mild; the chin's forward position is the larger component in the Frankfort frame and roughly equal in a chin-down NHP.</li>
+      <li><b>Landmark dependence.</b> Articular angle (z −4), Björk sum and Ar–Go depend on articulare (conf 0.6, left–right 4.7 mm apart); U1-SN/U1-FH and the whole incisor-uprighting estimate depend on U1 apex (5.7 mm disagreement); the nasolabial angle on the columella point (conf 0.5); the facial axis on an approximated Pt (conf 0.4); Me′ drives the soft-tissue heights and the facial index. The headline pattern (brachyfacial, Class III, proclined uppers) survives all of them; the exact z-scores do not.</li>
+      <li><b>Norm provenance.</b> Jarabak's linear norms are Björk's adolescent values, Arnett's heights carry cephalometric magnification, several Holdaway/Legan–Burstone "male" sets are secondary sources, and the subject's ancestry is not recorded. Face-height verdicts therefore range from "normal" (Jarabak) to "short" (Farkas, McNamara).</li>
+      <li><b>Occlusal plane.</b> The reverse-sloping occlusal plane (−5°) is mostly the 3.9° FH pitch; Wits varies −5.3 to −9.8 with the plane chosen. Class III on all variants.</li>
+      <li><b>Cheekbone′ / subpupil′</b> are two skin points 5 mm apart on one slope; treat them as one infraorbital reading (~1–2 SD behind), not as "cheek normal, subpupil retruded".</li>
+    </ul>
+    <ul>
+      <li><b>Not run:</b> COGS hard-tissue analysis; Downs with norms; Ricketts Xi/Pm/corpus axis; molar and canine Class III in mm; dental midlines vs facial midline (both ~1–1.5 mm left); curve of Spee; lower-incisor decompensation in the advancement arithmetic (would add 2–3 mm of reverse overjet); clockwise-rotation modelling of the maxillomandibular complex (the natural plan for this pattern: retracts Pog and advances A at once); soft-tissue response to the advancement scenarios; genioplasty sizing; pharyngeal airway from this CBCT (70 mm² minimum area on the December 2025 scan is the working figure).</li>
+      <li><b>Given, not re-measured here:</b> the Penn transverse widths (59.0 / 64.5 mm) that carry the 10.5 mm expansion figure — from an earlier manual pass on the same volume.</li>
+      <li><b>Data requests:</b> a lateral photograph in natural head position with a plumb line (fixes the GALL numbers); a clinical decision on whether the 1.6° ear–orbit roll is posture or a real cant; dental models or an intraoral scan; the sleep study.</li>
+    </ul>
+  </div>
+  <div class="callout"><b>Scope.</b> Geometry only. This is not a radiological report and the scan was not read for pathology. Norms are population means; treatment decisions belong to the surgeon and orthodontist with models, photographs, a sleep study and the patient in the room.</div>
+</section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* Minimal orbit control (drag = orbit, wheel/pinch = zoom, right-drag/two-finger = pan), no external dependency. */
+window.SimpleOrbit=function(camera,el){
+  const self=this; this.target=new THREE.Vector3(); this.autoRotate=false; this.autoRotateSpeed=1.0; this.enableDamping=true; this.dampingFactor=.08;
+  let theta=0.6, phi=1.2, radius=330, dTheta=0, dPhi=0, dRad=0, dragging=false, panning=false, lx=0, ly=0, pinch=0; const listeners={start:[]};
+  this.addEventListener=(t,f)=>{(listeners[t]||(listeners[t]=[])).push(f);}; const fire=t=>(listeners[t]||[]).forEach(f=>f());
+  this.setFromPosition=function(){ const o=camera.position.clone().sub(self.target); radius=o.length(); theta=Math.atan2(o.x,o.z); phi=Math.acos(Math.max(-1,Math.min(1,o.y/radius))); };
+  this.update=function(){ if(self.autoRotate&&!dragging) theta+=self.autoRotateSpeed*2*Math.PI/60/60*1.0;
+    theta+=dTheta; phi=Math.max(0.05,Math.min(Math.PI-0.05,phi+dPhi)); radius=Math.max(60,Math.min(1200,radius*(1+dRad)));
+    const k=self.enableDamping?(1-self.dampingFactor):0; dTheta*=k; dPhi*=k; dRad*=k;
+    camera.position.set(self.target.x+radius*Math.sin(phi)*Math.sin(theta), self.target.y+radius*Math.cos(phi), self.target.z+radius*Math.sin(phi)*Math.cos(theta)); camera.lookAt(self.target); };
+  const down=(x,y,btn)=>{dragging=true;panning=btn===2;lx=x;ly=y;fire('start');};
+  const move=(x,y)=>{ if(!dragging) return; const dx=x-lx, dy=y-ly; lx=x; ly=y;
+    if(panning){ const s=radius/600; const right=new THREE.Vector3(); const up=new THREE.Vector3(0,1,0); camera.getWorldDirection(right); right.cross(up).normalize(); self.target.addScaledVector(right,-dx*s); self.target.y+=dy*s; }
+    else { dTheta-=dx*0.006; dPhi-=dy*0.006; } };
+  el.addEventListener('mousedown',e=>{down(e.clientX,e.clientY,e.button);e.preventDefault();}); addEventListener('mousemove',e=>move(e.clientX,e.clientY)); addEventListener('mouseup',()=>dragging=false);
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('wheel',e=>{dRad+=Math.sign(e.deltaY)*0.06;e.preventDefault();fire('start');},{passive:false});
+  el.addEventListener('touchstart',e=>{ if(e.touches.length===1) down(e.touches[0].clientX,e.touches[0].clientY,0); else if(e.touches.length===2){dragging=false;pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);} fire('start'); },{passive:true});
+  el.addEventListener('touchmove',e=>{ if(e.touches.length===1) move(e.touches[0].clientX,e.touches[0].clientY); else if(e.touches.length===2){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); dRad+=(pinch-d)/300; pinch=d; } e.preventDefault(); },{passive:false});
+  el.addEventListener('touchend',()=>dragging=false);
+};
+</script>
+<script src="data.js"></script>
+<script src="plan.js"></script>
+<script>
+(function(){
+  const P=window.PLAN, D=window.CEPH; if(!P||!D) return;
+  const $=id=>document.getElementById(id);
+  const f1=x=>{ if(x==null||Number.isNaN(x)) return '—'; const v=+(+x).toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1); };
+  const sg=x=>{ if(x==null) return '—'; const v=+(+x).toFixed(1); return (v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1); };
+  const row=k=>D.measurements.find(m=>m.key===k)||{};
+  const T=(id,head,rows)=>{ $(id).innerHTML='<thead><tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((c,i)=>{ const o=(typeof c==='object'&&c)?c:{t:c}; return `<td class="${o.cls||(i>0?'num':'')}">${o.t}</td>`;}).join('')+'</tr>').join('')+'</tbody>'; };
+
+  /* strengths */
+  const st=[['Ramus height (Ar–Go)','Jarabak|Ar-Go ramus height','mm','long ramus, the most "jaw" trait there is (norm is adolescent; read as long, not as a z)'],
+    ['Posterior : anterior face height','Jarabak|S-Go/N-Me ratio','%','deep, heavy back of the jaw'],
+    ['Mandibular plane to FH','McNamara|FMA (FH to Go-Me)','°','flat jawline; no downward-sloping border'],
+    ['Cheekbone width (soft)','Farkas|Bizygomatic width zy-zy (soft tissue)','mm','wide zygomas'],
+    ["Cheekbone projection (R)","Arnett TVL|Cheekbone' R to TVL",'mm','on the norm — not flat'],
+    ['Chin to N-perpendicular (×1.08)','McNamara|Pog to N-perpendicular','mm','never needs a chin implant'],
+    ['Mandibular length (Co–Gn, ×1.08)','McNamara|Co-Gn effective mandibular length','mm','full-size mandible'],
+    ['Gonial angle Ar-Go-Me','Jarabak|Gonial angle Ar-Go-Me','°','normal'],
+    ['Gonial angle Co-Go-Me','Jarabak|Gonial angle Co-Go-Me','°','square end, symmetric'],
+    ["Chin soft tissue (Pog–Pog′)","Arnett thickness|Chin thickness Pog-Pog'",'mm','normal thickness; bone shows through']];
+  T('strtable',['Trait','Value','Male norm','z','Read'],st.map(([n,k,u,read])=>{ const m=Object.assign({},row(k)); if(k==='Jarabak|S-Go/N-Me ratio'){ m.sd=null; m.z=null; m.norm=null; m.note='range 62–65 %'; } return [n,f1(m.value)+' '+u, m.norm==null?(m.note&&m.note.match(/range[^;,.]*/)?m.note.match(/range[^;,.]*/)[0]:'—'):f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''), m.z==null?'—':sg(m.z), {t:read,cls:''}]; }).concat([['Skeletal symmetry','bony chin 0.4 mm off midline','< 2–3 mm','—',{t:'condyles and gonia within ~2.5 mm; no surgical asymmetry',cls:''}],['TMJs','seated, ≈2 mm joint space','—','—',{t:'healthy joints — the foundation every jaw plan depends on',cls:''}]]));
+
+  /* movement table */
+  const bp=P.base_plan, b=P.base, B0=P.baseline;
+  T('movetable',['#','Structure','Movement','Net from today','How it is held'],[
+    ['1',{t:'Maxilla, width',cls:''},{t:`Bone-borne expansion +${bp.expansion.skeletal_mm} mm skeletal (planned side effects ${bp.expansion.drop_mm} mm down, ${bp.expansion.forward_mm} mm forward)`,cls:''},{t:`basal width ${f1(B0.m.maxillary_basal_width)} → ${f1(b.m.maxillary_basal_width)} mm`,cls:'num'},{t:'≈2 mm over-expansion, 6 months passive; SARPE if the suture does not split',cls:''}],
+    ['2',{t:'Upper incisors',cls:''},{t:`Upright U1–FH ${f1(B0.m.U1_FH)}° → ${bp.decompensation.u1_fh_target_deg}°`,cls:''},{t:'edge ≈3 mm back; unmasks the reverse overjet',cls:''},{t:'orthodontics',cls:''}],
+    ['3',{t:'Lower incisors',cls:''},{t:`IMPA ${f1(B0.m.IMPA)}° → ${bp.decompensation.l1_impa_target_deg}°`,cls:''},{t:'edge ≈1 mm forward',cls:''},{t:'orthodontics, bonded retainer',cls:''}],
+    ['4',{t:'<b>Le Fort I</b>, standard level',cls:''},{t:`Advance ${bp.maxilla.adv_mm} mm at the incisor edge; ${bp.maxilla.ant_vertical_mm} mm anterior downgraft; ${Math.abs(bp.maxilla.post_vertical_mm)} mm posterior impaction (clockwise pitch)`,cls:''},{t:`A point ${sg(b.A[0])} forward, ${f1(-b.A[1])} down`,cls:'num'},{t:'plates + interpositional graft, ≈1 mm overcorrection',cls:''}],
+    ['5',{t:'Mandible, BSSO',cls:''},{t:`Seated to the bite (overjet ${bp.targets.overjet_mm}, overbite ${bp.targets.overbite_mm}); no setback`,cls:''},{t:`B ${sg(b.B[0])} AP, ${f1(-b.B[1])} down`,cls:'num'},{t:'plates or bicortical screws',cls:''}],
+    ['6',{t:'Chin',cls:''},{t:`Vertical lengthening ${bp.genioplasty.vertical_mm} mm, 0 mm front-to-back (${P.stack_plan.genioplasty.vertical_mm} mm in the height stack)`,cls:''},{t:`pogonion ${sg(b.Pog[0])} AP, ${f1(-b.Pog[1])} down`,cls:'num'},{t:'interpositional graft + plate',cls:''}],
+    ['7',{t:'Stage 2',cls:''},{t:`Infraorbital onlay ${bp.adjuncts.infraorbital_implant_mm} mm; angle implants ${bp.adjuncts.angle_implant_lateral_mm_per_side} mm lateral + ${bp.adjuncts.angle_implant_vertical_mm} mm down per side; nasal tip +${bp.adjuncts.rhinoplasty_tip_mm} mm`,cls:''},{t:'soft jaw width '+f1(B0.m.bigonial_soft_est)+' → '+f1(b.m.bigonial_soft_est)+' mm',cls:'num'},{t:'patient-specific implants; cartilage graft',cls:''}],
+  ]);
+  /* outcomes */
+  const O=[['ANB (°)','ANB','2'],['Overjet / overbite (mm)',null,'≈3 / 3'],['A to N-perp (mm)','A_to_Nperp','0–1'],['Pog to N-perp (mm)','Pog_to_Nperp','−0.3 ± 3.8'],['Profile angle G′–Sn–Pog′ (°)','Arnett_facial_angle','169 ± 3'],['Face height N–Me (mm)','N_Me','—'],['Soft face height N′–Me′ (mm)',"soft_N'_Me'_3D",'121 ± 7'],['Facial index (soft)','facial_index_soft','88.5 ± 5'],['Incisor display at rest (mm)','incisor_display_Sto_U1tip','2–4'],['Jaw width, % of cheekbone width','bigonial_to_bizygomatic_soft_pct','—'],['Maxilla − mandible basal width (mm)','Penn_differential_Mx_minus_Md','0 to +5'],['FMA (°), true / jaw contour',null,'21–25']];
+  const cols=[P.baseline,P.base,P.base_relapse,P.stack,P.stack_relapse];
+  T('outtable',['Metric','Today','Plan','Plan after relapse','+ height stack','Stack after relapse','Male norm'],O.map(([n,k,norm])=>{
+    const cells=cols.map(c=>{ if(n.startsWith('Overjet')) return f1(c.m.overjet)+' / '+f1(c.m.overbite); if(n.startsWith('FMA')) return f1(c.m.FMA)+' / '+f1(c.m.FMA_contour); return f1(c.m[k]); });
+    return [{t:n,cls:''},...cells,norm]; }).concat([
+    [{t:'Mandible front-to-back: B / Pog (mm)',cls:''},'—',...cols.slice(1).map(c=>c.B?sg(c.B[0])+' / '+sg(c.Pog[0]):'—'),'≥ −2 (airway)'],
+    [{t:'Subpupil (under-eye) z, fixed vertical, 0/3.9/8°',cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl_fixed_preop_Sn|Subpupil' R to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0'],
+    [{t:'Incisor FA point to GALL (mm), 0/3.9/8°',cls:''},...cols.map(c=>c.gall.U1FA.map(sg).join(' / ')),'0 to −2'],
+    [{t:"Soft chin to Sn vertical z, 0/3.9/8°",cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl|Soft-tissue pogonion (Pog') to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0']]));
+
+  /* height segments + ladder */
+  const H=P.height_table, hc=['baseline','base','stack','stack_relapse'];
+  const seg=[['Midface N′–Sn','NSn','56.6 (derived)'],['Upper lip Sn–Sto','ULL','24.4 ± 2.5'],['Lips parted (gap)','ILG','2.4 ± 1.1'],['Lower lip + chin','Stmi','54.3 ± 2.4'],['Lower third Sn–Me′','SnMe','81.1 ± 4.7'],['Total N′–Me′','sNMe','121.3 ± 6.8'],['Incisor display','disp','2–4'],['Facial index (soft)','FI','88.5 ± 5.1']];
+  T('segtable',['Segment (mm)','Today','Plan','+ stack','Stack, relapsed','Norm'],seg.map(([n,k,norm])=>[{t:n,cls:''},...hc.map(c=>{ const v=H[c][k], z=H[c][k+'_z']; return f1(v)+(z!=null?` <span class="sub">(${sg(z)})</span>`:''); }),norm]));
+  const maxv=Math.max(...P.ladder.map(r=>r.soft_surgery));
+  T('laddertable',['Height lever','At surgery','Retained','Cumulative N′–Me′ (retained)'],P.ladder.map(r=>[{t:r.step.replace('(base)','(plan)'),cls:''},sg(r.soft_surgery),sg(r.soft_retained),{t:`${f1(r.cum_soft)} (${f1(r.cum_soft_ret)}) <div class="hbar" style="width:${Math.round(100*r.soft_surgery/maxv)}%"></div><div class="hbar ret" style="width:${Math.round(100*r.soft_retained/maxv)}%;margin-top:2px"></div>`,cls:'num barcell'}]));
+  const fi=H.stack.FI, fr=H.stack_relapse.FI;
+  const norms=[['North American white (Farkas)',88.5,5.1],['North Indian (Choudhary 2026)',88.15,6.88],['US workforce, all races (NIOSH, sellion-based)',85.5,null],['US Caucasian <30 (NIOSH model)',83.5,null],['Chinese workers (Du 2008)',79.5,null],['Central Serbian',94.0,7.0]];
+  T('indextable',['Reference','Norm','Stack','Relapsed'],norms.map(([n,m,s])=>[{t:n,cls:''},f1(m)+(s?' ± '+f1(s):''),s?'z '+sg((fi-m)/s):sg(fi-m)+' pts',s?'z '+sg((fr-m)/s):sg(fr-m)+' pts']));
+
+  /* expansion + no-Le-Fort */
+  const ex=r=>{ const bad=r.Pog&&r.Pog[0]<-2; return [{t:r.name,cls:''},f1(r.rot)+'°',{t:r.B?sg(r.B[0])+' / '+sg(r.Pog[0]):'0 / 0',cls:'num '+(bad?'badc':'good')},f1(r.m.N_Me),f1(r.m.ANB)+'°',f1(r.m.overjet)+' / '+f1(r.m.overbite),f1(r.m.A_to_Nperp),f1(r.m.incisor_display_Sto_U1tip)]; };
+  const eh=['Scenario (mandible not operated)','Jaw swings open','B / Pog front-to-back (mm)','N–Me','ANB','Overjet / overbite','A to N-perp','Tooth show'];
+  T('exptable',eh,P.expansion.map(ex));
+  T('nolftable',eh,P.no_lefort.map(ex).concat([[{t:'<b>Plan with Le Fort I</b> (for comparison)',cls:''},f1(P.base.rot)+'°',{t:sg(P.base.B[0])+' / '+sg(P.base.Pog[0]),cls:'num good'},f1(P.base.m.N_Me),f1(P.base.m.ANB)+'°',f1(P.base.m.overjet)+' / '+f1(P.base.m.overbite),f1(P.base.m.A_to_Nperp),f1(P.base.m.incisor_display_Sto_U1tip)]]));
+})();
+</script>
+<script src="mesh.js"></script>
+<script>
+(function(){
+const D=window.CEPH; const LM=D.landmarks; const MS=D.measurements;
+/* reference-line distances as searchable rows (GALL, glabella verticals, TVL) */
+for(const [pt,lms] of [['A',['A']],['U1FA',['U1FA']],['U1tip',['U1tip']],['B',['B']],['Pog',['Pog']],['RimR',['RimR']],['RimL',['RimL']]]){
+  const r=D.reftable[pt]; if(!r) continue;
+  for(const [line,lab] of [['Andrews GALL','Andrews GALL (glabellar vertical here)'],['FH vertical through bony G','bony-glabella vertical'],['N-perpendicular','N-perpendicular']]){
+    if(r[line]==null) continue;
+    MS.push({key:'Reference lines|'+pt+' to '+line,analysis:'Reference lines',measure:pt+' to '+lab,value:r[line],unit:'mm',norm:null,sd:null,z:null,note:'+ = anterior of the line, Frankfort frame. Andrews Element II judges the incisor FA point on the GALL; a balanced male\'s hard A point sits ≈ 7–10 mm behind the glabellar vertical and pogonion ≈ 9 mm behind (derived from Arnett, see reconciliation).',lm:lms});
+  }
+}
+const $=id=>document.getElementById(id);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f1=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1); };
+const sgn=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return (v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1); };
+const zcls=z=>z==null?'na':(Math.abs(z)<1?'ok':(Math.abs(z)<2?'warn':'bad'));
+
+/* ---------- verdict tiles ---------- */
+const K=D.keys;
+$('meta-lm').textContent=Object.keys(LM).length+' landmarks'; $('meta-ms').textContent=MS.length+' measurements'; $('h-tables').textContent=MS.length+' measurements against adult-male norms';
+$('h-verdict').textContent='Class III jaw discrepancy of 8–12 mm on a short, wide, horizontal-growth face: a mildly retrusive maxilla (1–4 mm in the Frankfort frame, 5–8 mm in a chin-down natural head position), a mandible of normal length rotated forward so that the chin sits 4–11 mm ahead of a balanced male, and a maxilla 10 mm too narrow';
+const row=k=>MS.find(m=>m.key===k)||{};
+const CoGoRow=row('Jarabak|Co-Go ramus height');
+const pitch=D.frame.pitch, sinp=Math.sin(pitch*Math.PI/180), Gs=LM["G'"].p[1];
+const nhp=(name,valFH)=>valFH-(Gs-LM[name].p[1])*sinp;   // shift relative to the G′ vertical when the head is pitched chin-down by the scanner angle
+const A_nhp=nhp('A',K.A_GALL), U1_nhp=nhp('U1FA',K.U1FA_GALL), Pog_nhp=nhp('Pog',D.reftable.Pog['Andrews GALL']), Or_nhp=nhp("OrR'",D.reftable["OrR'"]['Andrews GALL']), Rim_nhp=nhp('RimR',D.reftable.RimR['Andrews GALL']);
+const PogS=row("Arnett TVL|Soft-tissue pogonion (Pog') to TVL"), FacA=row("Arnett harmony|Facial angle G'-Sn-Pog'"), rimR=row("Arnett TVL|Soft-tissue orbital rim' R to TVL"), rimL=row("Arnett TVL|Soft-tissue orbital rim' L to TVL"), chkR=row("Arnett TVL|Cheekbone' R to TVL"), chkL=row("Arnett TVL|Cheekbone' L to TVL"), spR=row("Arnett TVL|Subpupil' R to TVL"), spL=row("Arnett TVL|Subpupil' L to TVL");
+const WitsF=row('Wits|Wits appraisal AO-BO, Jacobson functional OP (premolar-molar contacts)');
+const tiles=[
+ ['Chin position: Pog to N-perp', sgn(K.Pog_Nperp)+' mm (FH) · ≈ '+sgn(K.Pog_Nperp-(0-LM.Pog.p[1])*sinp)+' in NHP','norm −0.3 ± 3.8 · SNB '+f1(K.SNB)+'° (norm 80 ± 2) · facial depth '+f1(K.facial_depth)+'° (norm 89 ± 3) · Pog to GALL '+sgn(D.reftable.Pog['Andrews GALL'])+' (a balanced male ≈ −9) · Co–Gn '+f1(K.Co_Gn*1.08)+' mm (norm 134 ± 7)','bad','normal length, rotated forward'],
+ ['Maxilla AP: A to N-perp / GALL', sgn(K.A_Nperp)+' / '+sgn(K.A_GALL)+' mm','norm +1.1 ± 2.7 · SNA '+f1(K.SNA)+'° (norm 82–84) · a balanced male\'s A point is ≈ 7–10 mm behind the GALL, so the deficit is 1–4 mm here, ≈ '+f1(Math.abs(A_nhp)-10)+'–'+f1(Math.abs(A_nhp)-7)+' mm at the scanned head pitch ('+sgn(A_nhp)+')','warn','mildly retrusive'],
+ ['ANB / Wits', f1(K.ANB)+'° / '+f1(K.Wits)+' to '+f1(WitsF.value)+' mm','norms 2 ± 2° / −1 ± 2 mm · Wits '+f1(K.Wits)+' on the incisor–molar plane, '+f1(WitsF.value)+' on the Jacobson functional plane (definition-matched but a short, low-confidence plane) — Class III on both','bad','Class III'],
+ ['Soft-tissue chin to Sn vertical', sgn(PogS.value)+' mm','Arnett male norm −3.5 ± 1.8 (z '+sgn(PogS.z)+') · G′–Sn–Pog′ '+f1(FacA.value)+'° (norm 169 ± 3) — straight-to-concave','bad','chin dominant'],
+ ['Under-eye rim′ / cheekbone′ / subpupil′', f1((rimR.value+rimL.value)/2)+' / '+f1((chkR.value+chkL.value)/2)+' / '+f1((spR.value+spL.value)/2)+' mm','male norms −22.4 / −25.2 / −18.4 · z '+sgn((rimR.z+rimL.z)/2)+' / '+sgn((chkR.z+chkL.z)/2)+' / '+sgn((spR.z+spL.z)/2)+' · the cheek and subpupil points are 5 mm apart on one slope, so read them as one ~1–2 SD infraorbital reading','warn','small infraorbital deficit'],
+ ['Vertical: FMA / SN-GoGn', f1(K.FMA)+'° / '+f1(K.SN_MP)+'°','norms 21 ± 4 / 32 ± 4 · S-Go:N-Me '+f1(K.SGo_NMe_pct)+'% (range 62–65) · Björk sum '+f1(K.sum_Bjork)+'° (396 ± 5) · Y-axis '+f1(row('Other|Y-axis S-Gn to FH').value)+'° (Downs 59.4 conventional, no SD)','bad','brachyfacial, counter-clockwise'],
+ ['Face height N–Me / ANS–Me', f1(K.N_Me)+' / '+f1(K.ANS_Me)+' mm','short by 5–11 mm depending on the norm set: Jarabak N–Me 112.5 ± 7.5 (z −0.6), Farkas soft n–gn '+f1(row("Farkas|Face height n-gn (soft: N'-Me')").value)+' vs 121 ± 7 (z −1.3), McNamara ANS–Me ×1.08 vs 74.6 ± 5 (z −2.2); Arnett\'s 137.7 carries uncorrected magnification','warn','short lower face'],
+ ['Ramus Ar–Go / Co–Go', f1(K.Ar_Go_mid)+' / '+f1(CoGoRow.value!=null?CoGoRow.value:(K.Co_Go_R+K.Co_Go_L)/2)+' mm','Jarabak Ar–Go 44 ± 5 → z +2.8 (Björk\'s norm is adolescent; read as "long", not as a z) · gonial angle Ar-Go-Me '+f1(K.gonial_mid)+'° (norm 130 ± 6) · Co-Go-Me '+f1(row('Jarabak|Gonial angle Co-Go-Me').value)+'°','ok','long ramus'],
+ ['Transverse', K.Penn_differential+' mm','Penn basal widths at the first-molar furcations 59.0 / 64.5 (maxilla should be +5 → 10.5 mm deficit; measured in an earlier manual pass, not re-verified by this one) · Ricketts frontal J–J '+f1(K.J_J)+' (norm 66.1) vs Ag–Ag '+f1(K.Ag_Ag)+' (85.9), differential '+f1(K.Ag_Ag-K.J_J)+' (19.8) reads only ~2 mm — the two methods disagree; the molars are tipped, which is what the Penn method is designed to see','bad','maxillary constriction (Penn) — confirm on models'],
+ ['Incisors', 'U1–SN '+f1(K.U1_SN)+'° · IMPA '+f1(K.IMPA)+'°','norms 103 ± 6 / 90 · overjet '+f1(K.overjet)+' · overbite '+f1(K.overbite)+' — edge-to-edge','bad','uppers flared, lowers normal'],
+ ['Width / index', 'zy–zy '+f1(K.Zy_Zy_soft)+' mm · index '+f1(K.facial_index),'Farkas 137 ± 4 · index 88.5 ± 5 (z −2.2)','warn','wide, short'],
+ ['Nose / lips', 'tip '+f1(D.reftable.Prn['Arnett TVL through Sn'])+' mm · NLA '+f1(K.nasolabial)+'°','projection norm 17.4 ± 1.7 · NLA 106 ± 8 — columella point conf 0.5, columella near-horizontal, so the angle is approximate (59–73° across constructions); the acute angle is the proclined incisor pushing the lip','warn','short nose, acute NLA'],
+ ['Symmetry', 'bony chin '+f1(Math.abs(LM.Pog.p[0]))+' mm','soft-tissue chin '+f1(Math.abs(LM["Pog'"].p[0]))+' mm to the right · a 1.6° roll between the ear–orbit plane and the jaws (left molar 1.4 mm lower in the FH frame; level in the scanner frame) — head roll or real cant, undecided · condyles and gonia left–right within ~2.5 mm; articulare 3.8 mm higher on the left (conf 0.6)','ok','sub-surgical'],
+];
+$('tiles').innerHTML=tiles.map(t=>`<div class="tile ${t[3]}"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="n">${t[2]}</div><span class="pill ${t[3]}">${t[4]}</span></div>`).join('');
+$('headline').innerHTML=D.headline.map(h=>`<li>${h.replace(/^\d+\.\s*/,'')}</li>`).join('');
+
+/* ---------- GALL ---------- */
+const G=D.gall;
+$('g-inc').textContent=f1(G.forehead_inclination_verified_scanner_vertical_deg!=null?G.forehead_inclination_verified_scanner_vertical_deg:K.forehead_inclination); $('g-incfh').textContent=f1(G.forehead_inclination_used_deg!=null?G.forehead_inclination_used_deg:K.forehead_inclination_FHframe);
+$('g-adj').textContent=f1(G.adjustment_mm_verified_scanner_incl!=null?G.adjustment_mm_verified_scanner_incl:G.adjustment_mm)+'–'+f1(G.adjustment_mm_FHframe); $('g-gap').textContent=f1(G.Gprime_minus_FFA_mm); $('g-ant').textContent=f1(G.GALL_ant_mm); $('g-sup').textContent=f1(LM.Superion.p[1]);
+$('g-note').innerHTML=`<b>Resolving "A point is 15 mm behind".</b> In the Frankfort frame A point is ${sgn(K.A_GALL)} mm and the incisor FA point ${sgn(K.U1FA_GALL)} mm from the GALL. Two things turn −11 into "15–20": <b>(1) posture.</b> Andrews measures against a true vertical in natural head position, which this scan did not record. The head sat ${D.frame.pitch}° chin-down relative to Frankfort; A point lies ${f1(Gs-LM.A.p[1])} mm below glabella, so every degree of chin-down moves it ≈ ${f1((Gs-LM.A.p[1])*Math.PI/180)} mm behind the line. At the scanned pitch A is ≈ ${sgn(A_nhp)} mm, the FA point ≈ ${sgn(U1_nhp)}, the soft-tissue orbital rim′ ≈ ${sgn(Or_nhp)} (bony rim ≈ ${sgn(Rim_nhp)}); at 8° chin-down A would be ≈ −20. Whether natural head position is 0°, 4° or 8° from Frankfort is the single unmeasured datum here — a profile photograph in NHP would settle it. <b>(2) the normal offset.</b> Hard-tissue A point is not on the forehead line in anyone: from Arnett's balanced males (A′ −0.3, G′ −8.0 to the Sn vertical, upper-lip thickness 15–18 mm) a harmonious male's A point sits about 7–10 mm behind the glabellar vertical, and his bony pogonion about 9 mm behind it. So "A point 15 mm behind the GALL" in a chin-down NHP is a maxillary deficit of roughly 5–8 mm, not 15; in the Frankfort frame it is 1–4 mm. On the same reference pogonion (${sgn(D.reftable.Pog['Andrews GALL'])} here, ≈ ${sgn(Pog_nhp)} at the scanned pitch) is 4–12 mm <i>ahead</i> of a balanced male's. <b>The incisor.</b> It sits near the GALL only because it is proclined ≈ 18° beyond the norm (U1–FH ${f1(row('Incisors|U1 to FH').value)}° vs 111); uprighting it (estimate: 2.5–5 mm depending on the rotation centre) puts the FA point ≈ −3 to −6 mm in the Frankfort frame, ≈ −9 to −12 mm at the scanned pitch, and turns the +${f1(K.overjet)} mm overjet into a −3.4 to −6.1 mm reverse overjet. That reverse overjet, not the GALL, is what sizes the maxillary advancement: 6–9 mm with the uppers alone, 8–12 mm if the lower incisors are decompensated too.`;
+const rt=D.reftable; const cols=['N-perpendicular','FH vertical through bony G',"FH vertical through soft G'",'Andrews GALL','FALL (FFA vertical)','Arnett TVL through Sn'];
+const rows=['A','ANS','U1FA','U1tip','B','Pog','Me','RimR','RimL','MalR','MalL','IOFR','IOFL','G','N','Sn','Ls','Li','Pog\'','OrR\'','OrL\'','CheekR\'','CheekL\'','SubpupilR\'','SubpupilL\''];
+$('reftable').innerHTML='<thead><tr><th>Point</th>'+cols.map(c=>`<th>${c.replace('FH vertical through ','').replace('Arnett TVL through Sn','TVL (Sn)')}</th>`).join('')+'</tr></thead><tbody>'+
+ `<tr><td>line, mm ahead of N</td>${cols.map(c=>`<td class="num">${sgn(D.refs[c])}</td>`).join('')}</tr>`+
+ rows.filter(r=>rt[r]).map(r=>`<tr><td>${r}</td>${cols.map(c=>`<td class="num">${sgn(rt[r][c])}</td>`).join('')}</tr>`).join('')+'</tbody>';
+
+/* ---------- tables ---------- */
+const analyses=[...new Set(MS.map(m=>m.analysis))];
+$('an-sel').innerHTML+=analyses.map(a=>`<option>${a}</option>`).join('');
+function renderTables(){
+  const q=$('q').value.trim().toLowerCase(), an=$('an-sel').value; let n=0;
+  $('tablist').innerHTML=analyses.filter(a=>!an||a===an).map(a=>{
+    const rows=MS.filter(m=>m.analysis===a&&(!q||(m.measure+' '+m.note+' '+m.analysis+' '+m.lm.join(' ')).toLowerCase().includes(q)));
+    if(!rows.length) return ''; n+=rows.length;
+    return `<h3 style="margin:14px 0 6px">${a}</h3><div class="tblwrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Male norm</th><th>SD</th><th>z</th><th>Note</th></tr></thead><tbody>`+
+      rows.map(m=>`<tr data-key="${m.key}"><td>${m.measure}</td><td class="num">${f1(m.value)} ${m.unit}</td><td class="num">${m.norm==null?'—':f1(m.norm)}</td><td class="num">${m.sd==null?'—':f1(m.sd)}</td><td class="num"><span class="pill ${zcls(m.z)}">${m.z==null?'—':sgn(m.z)}</span></td><td class="sub">${m.note}</td></tr>`).join('')+'</tbody></table></div>';
+  }).join('');
+  $('count').textContent=n+' shown';
+}
+$('q').addEventListener('input',renderTables); $('an-sel').addEventListener('change',renderTables); renderTables();
+$('tablist').addEventListener('click',e=>{const tr=e.target.closest('tr[data-key]'); if(tr) selectMeasure(tr.dataset.key,true);});
+
+/* ---------- 3D ---------- */
+const canvas=$('c'), stage=$('stage'), labelsEl=$('labels');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(32,1,1,3000);
+const controls=new SimpleOrbit(camera,canvas); controls.autoRotate=!matchMedia('(prefers-reduced-motion: reduce)').matches; controls.autoRotateSpeed=1.0;
+controls.target.set(0,-45,-20);
+scene.add(new THREE.HemisphereLight(0x9db6d6,0x2a2118,.6));
+const key=new THREE.DirectionalLight(0xfff1dc,1.0); key.position.set(60,80,140); scene.add(key);
+const fill=new THREE.DirectionalLight(0x8fb8ff,.4); fill.position.set(-120,20,-60); scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffffff,.45); rim.position.set(0,-80,-160); scene.add(rim);
+const matSolid=new THREE.MeshStandardMaterial({color:0xe9e2d3,roughness:.62,metalness:0});
+const matXray=new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+let mesh=null;
+function loadMesh(){
+  try{
+    const M=window.MESH; const b2a=s=>{const b=atob(s);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u.buffer;};
+    const pos16=new Int16Array(b2a(M.pos)); const pos=new Float32Array(pos16.length); for(let i=0;i<pos16.length;i++) pos[i]=pos16[i]*M.scale;
+    const idx=new Uint32Array(b2a(M.idx));
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setIndex(new THREE.BufferAttribute(idx,1)); g.computeVertexNormals();
+    mesh=new THREE.Mesh(g,matSolid); scene.add(mesh);
+    $('status').textContent=(M.ni/3).toLocaleString()+' triangles · 1.35 mm grid, 320 HU iso-surface · bone only · thin bone (ANS, sella floor) partly missing';
+    $('meta-mesh').textContent=(M.ni/3).toLocaleString()+'-triangle model';
+  }catch(e){ $('status').textContent='model failed to load'; }
+}
+loadMesh();
+/* reference geometry */
+const refG=new THREE.Group(); scene.add(refG);
+const lineMat=(c,o)=>new THREE.LineBasicMaterial({color:c,transparent:true,opacity:o||.9});
+function seg(a,b,c,o){ const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]); const l=new THREE.Line(g,lineMat(c,o)); refG.add(l); return l; }
+const P=n=>LM[n]?LM[n].p:null;
+for(const [name,ant] of Object.entries(D.refs)){ if(name==='Andrews GALL') continue; seg([0,40,ant],[0,-135,ant],0x8fd3f4,name==="FH vertical through soft G'"?1:.45); }
+// FH plane
+const fhY=(P('PoR')[1]+P('PoL')[1]+P('OrR')[1]+P('OrL')[1])/4;
+const plane=new THREE.Mesh(new THREE.PlaneGeometry(190,150),new THREE.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false})); plane.rotation.x=-Math.PI/2; plane.position.set(0,fhY,-45); refG.add(plane);
+seg([-95,fhY,-120],[95,fhY,-120],0xffd166,.5); seg([-95,fhY,30],[95,fhY,30],0xffd166,.5); seg([-95,fhY,-120],[-95,fhY,30],0xffd166,.5); seg([95,fhY,-120],[95,fhY,30],0xffd166,.5);
+seg(P('S'),P('N'),0xffd166,.9);
+const goM=[(P('GoR')[0]+P('GoL')[0])/2,(P('GoR')[1]+P('GoL')[1])/2,(P('GoR')[2]+P('GoL')[2])/2]; seg(goM,P('Me'),0xffd166,.9);
+seg(P('Prn'),P("Pog'"),0xffd166,.6);
+seg([0,-70.25,8.04],[0,-73.18,-24.32],0xffd166,.6);
+/* labels */
+const labels={}; let showBone=true, showSoft=true, selectedLM=null, selectedMS=null;
+const AUX=/(_mid$|^Pt[RL]$|^Mol[RL]$|^Pm[RL]$|^U1lab$|^L1lab$|^Zy[RL]'$|^Go[RL]'$)/;
+for(const [n,l] of Object.entries(LM)){ if(AUX.test(n)) continue; const d=document.createElement('button'); d.className='lbl '+l.group; d.textContent=n; d.type='button'; d.id='lbl-'+n.replace(/[^A-Za-z0-9_-]/g,'_'); d.setAttribute('aria-label','landmark '+n); d.addEventListener('click',()=>selectLandmark(n)); labelsEl.appendChild(d); labels[n]=d; }
+let spinBefore=null;
+stage.addEventListener('pointerenter',()=>{ spinBefore=controls.autoRotate; controls.autoRotate=false; });
+stage.addEventListener('pointerleave',()=>{ if($('b-spin').getAttribute('aria-pressed')==='true') controls.autoRotate=true; spinBefore=null; });
+const hiG=new THREE.Group(); scene.add(hiG);
+function clearHi(){ while(hiG.children.length) hiG.remove(hiG.children[0]); }
+function dot(p,c,r){ const m=new THREE.Mesh(new THREE.SphereGeometry(r||1.6,12,12),new THREE.MeshBasicMaterial({color:c})); m.position.set(...p); hiG.add(m); }
+function selectLandmark(n){
+  selectedLM=n; selectedMS=null; clearHi(); dot(P(n),0x7cffb2,2.2);
+  for(const k in labels) labels[k].classList.toggle('sel',k===n), labels[k].classList.remove('dim');
+  const l=LM[n]; $('p-title').textContent=n; $('p-sub').textContent=`lat ${sgn(l.p[0])} · sup ${sgn(l.p[1])} · ant ${sgn(l.p[2])} mm · conf ${l.conf}`;
+  const ms=MS.filter(m=>m.lm.includes(n)); $('p-desc').textContent=ms.length? ms.length+' measurements use this landmark. Click one to draw it.':'No tabulated measurement uses this landmark directly.';
+  $('p-list').innerHTML=ms.map(m=>mrow(m)).join('');
+  $('p-list').querySelectorAll('.mrow').forEach(el=>el.addEventListener('click',()=>selectMeasure(el.dataset.key,false)));
+}
+function mrow(m){ const hasZ=m.z!=null; const pct=hasZ?Math.max(4,Math.min(96,50+m.z*12)):50;
+  return `<div class="mrow" data-key="${m.key}"><span class="name">${m.measure}</span><span class="val">${f1(m.value)} ${m.unit}</span><span class="an">${m.analysis}${m.norm!=null?' · norm '+f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''):''}</span><span class="z"><span class="pill ${zcls(m.z)}">${hasZ?'z '+sgn(m.z):'no z'}</span></span>${hasZ?`<span class="bar"><b></b><i style="left:${pct}%"></i></span>`:''}</div>`; }
+function selectMeasure(key,scroll){
+  const m=MS.find(x=>x.key===key); if(!m) return; selectedMS=key; clearHi();
+  if(m.value==null||!m.lm.length){ for(const k in labels){labels[k].classList.remove('sel');labels[k].classList.remove('dim');} $('p-title').textContent=m.measure; $('p-sub').textContent=m.analysis; $('p-desc').textContent=(m.value==null?'Not measured — ':'')+(m.note||'')+' Nothing to draw for this row.'; $('p-list').innerHTML=mrow(m); document.querySelectorAll('tr[data-key]').forEach(tr=>tr.classList.toggle('sel',tr.dataset.key===key)); return; }
+  const pts=m.lm.map(P).filter(Boolean);
+  pts.forEach(p=>dot(p,0x7cffb2,1.8));
+  for(let i=0;i<pts.length-1;i++){ const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...pts[i]),new THREE.Vector3(...pts[i+1])]); hiG.add(new THREE.Line(g,lineMat(0x7cffb2,1))); }
+  for(const k in labels){ labels[k].classList.toggle('sel',m.lm.includes(k)); labels[k].classList.toggle('dim',!m.lm.includes(k)); }
+  $('p-title').textContent=m.measure; $('p-sub').textContent=m.analysis; $('p-desc').textContent=(m.note||'')+(m.lm.length?' — landmarks: '+m.lm.join(', '):'');
+  $('p-list').innerHTML=mrow(m);
+  document.querySelectorAll('tr[data-key]').forEach(tr=>tr.classList.toggle('sel',tr.dataset.key===key));
+  if(scroll) document.getElementById('viewer').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+}
+/* views & buttons */
+function view(w){ const d=330; const t=controls.target; const p={front:[0,0,d],side:[d,0,0],three:[d*.7,d*.22,d*.7]}[w]; camera.position.set(t.x+p[0],t.y+p[1],t.z+p[2]); controls.setFromPosition(); controls.update(); }
+$('b-front').onclick=()=>view('front'); $('b-side').onclick=()=>view('side'); $('b-three').onclick=()=>view('three'); view('three');
+$('b-spin').onclick=e=>{const on=e.currentTarget.getAttribute('aria-pressed')==='true'; controls.autoRotate=!on; spinBefore=null; e.currentTarget.setAttribute('aria-pressed',String(!on));}; $('b-spin').setAttribute('aria-pressed',String(controls.autoRotate));
+$('b-bone').onclick=e=>{showBone=!showBone;e.currentTarget.setAttribute('aria-pressed',showBone);};
+$('b-soft').onclick=e=>{showSoft=!showSoft;e.currentTarget.setAttribute('aria-pressed',showSoft);};
+$('b-refs').onclick=e=>{refG.visible=!refG.visible;e.currentTarget.setAttribute('aria-pressed',refG.visible);};
+$('b-xray').onclick=e=>{ if(!mesh) return; const on=mesh.material===matSolid; mesh.material=on?matXray:matSolid; e.currentTarget.setAttribute('aria-pressed',on); };
+controls.addEventListener('start',()=>{ if(controls.autoRotate){controls.autoRotate=false;$('b-spin').setAttribute('aria-pressed','false');} });
+function size(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',size); size();
+const v=new THREE.Vector3();
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera);
+  const w=stage.clientWidth,h=stage.clientHeight; const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
+  for(const [n,el] of Object.entries(labels)){ const l=LM[n]; const show=(l.group==='bone'?showBone:showSoft);
+    if(!show){ el.style.display='none'; continue; }
+    v.set(l.p[0],l.p[1],l.p[2]).project(camera); if(v.z>1){ el.style.display='none'; continue; }
+    el.style.display=''; el.style.left=((v.x+1)/2*w)+'px'; el.style.top=((1-v.y)/2*h)+'px'; el.style.zIndex=el.classList.contains('sel')?3:Math.round((1-v.z)*100); }
+})();
+})();
+</script>
+
+</body></html>

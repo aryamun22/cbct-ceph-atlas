@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Skull Surgery Sandbox</title>
+<meta name="description" content="Open teaching sandbox: take one real, consented CBCT skull apart, move the maxilla, mandible, chin and every tooth, and watch the cephalometric readout, occlusion and airway checks react.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#right">Skip to the readout and missions</a>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Open teaching tool · one real skull</span>
+      <h1>Skull Surgery Sandbox</h1>
+    </div>
+    <p class="tag">Take the skull apart, move the jaws, chin and every tooth, and watch the cephalometric numbers, the bite and the airway check react. Bone and teeth only; not for clinical planning. <a id="atlasLink" href="../">Full measurements in the ceph atlas</a>.</p>
+  </header>
+
+  <nav class="toolbar" aria-label="Tools">
+    <div class="seg" role="group" aria-label="What a drag on a piece does">
+      <button type="button" data-mode="orbit" aria-pressed="false" title="Drag always orbits the camera (O)">Orbit</button>
+      <button type="button" data-mode="move" aria-pressed="true" title="Drag a piece to move it; Shift-drag rotates (M)">Move</button>
+      <button type="button" data-mode="rotate" aria-pressed="false" title="Drag a piece to rotate it about its pivot (R)">Rotate</button>
+    </div>
+    <button type="button" id="btnGroups" aria-pressed="true" title="Operation groups: clicking a maxilla half or an upper tooth grabs the whole Le Fort I segment, a lower tooth grabs the BSSO segment (G)">Operation groups</button>
+    <button type="button" id="btnExplode" aria-pressed="false" title="Animate the pieces apart (E)">Explode</button>
+    <button type="button" id="btnReseat" title="Animate every piece back to its anatomical home">Re-seat all</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" id="btnUndo" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
+    <button type="button" id="btnRedo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>Redo</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" id="btnExport" title="Show the movement plan as copyable JSON; import a plan">Export / import</button>
+    <button type="button" id="btnAbout">About</button>
+    <button type="button" id="btnTheme" aria-label="Colour theme: auto">Theme: auto</button>
+  </nav>
+
+  <aside id="left" class="panel" aria-label="Pieces and precise movement">
+    <div class="tabs" role="tablist" aria-label="Left panel">
+      <button type="button" role="tab" id="tab-pieces" aria-controls="pane-pieces" aria-selected="true">Pieces</button>
+      <button type="button" role="tab" id="tab-move" aria-controls="pane-move" aria-selected="false">Move</button>
+    </div>
+    <section id="pane-pieces" role="tabpanel" aria-labelledby="tab-pieces" class="pane">
+      <p class="sub">Click a name to select. <span class="kbd">eye</span> shows or hides, <span class="kbd">lock</span> stops a piece from being dragged.</p>
+      <div id="pieceList"></div>
+    </section>
+    <section id="pane-move" role="tabpanel" aria-labelledby="tab-move" class="pane" hidden>
+      <div id="inspector"><p class="sub">Select a piece in the 3-D view or in the Pieces list.</p></div>
+    </section>
+  </aside>
+
+  <main id="stage" aria-label="3-D view">
+    <canvas id="c" tabindex="0" role="application" aria-roledescription="3-D model" aria-label="3-D skull. Drag to orbit, drag a piece to move it, Shift-drag to rotate it, scroll or pinch to zoom, right-drag or two fingers to pan. Arrow keys nudge the selected piece."></canvas>
+    <div id="labels" aria-hidden="true"></div>
+    <div class="views" role="group" aria-label="Camera views">
+      <button type="button" data-view="front">Front</button>
+      <button type="button" data-view="right" title="Patient facing right, like a lateral ceph">Right</button>
+      <button type="button" data-view="left">Left</button>
+      <button type="button" data-view="below" title="From below: the occlusal view">Below</button>
+      <button type="button" data-view="home">3/4</button>
+    </div>
+    <div class="layers" role="group" aria-label="Layers">
+      <label><input type="checkbox" id="chkLm" checked> Landmarks + ceph lines</label>
+      <label><input type="checkbox" id="chkOcc" checked> Occlusion dots</label>
+      <label><input type="checkbox" id="chkGhost"> See-through cranium</label>
+    </div>
+    <div id="hudMission" hidden></div>
+    <div id="hudWarn" aria-live="polite"></div>
+    <div id="status" aria-live="polite"></div>
+    <div id="loader" role="progressbar" aria-label="Loading the skull" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="lbox">
+        <div class="ltitle">Loading the skull</div>
+        <div class="lbar"><span id="lfill"></span></div>
+        <div id="ltext" class="ltext">Starting…</div>
+      </div>
+    </div>
+  </main>
+
+  <aside id="right" class="panel" aria-label="Readout, plans and missions">
+    <div class="tabs" role="tablist" aria-label="Right panel">
+      <button type="button" role="tab" id="tab-readout" aria-controls="pane-readout" aria-selected="true">Readout</button>
+      <button type="button" role="tab" id="tab-plan" aria-controls="pane-plan" aria-selected="false">Presets &amp; plan</button>
+      <button type="button" role="tab" id="tab-missions" aria-controls="pane-missions" aria-selected="false">Missions</button>
+    </div>
+    <section id="pane-readout" role="tabpanel" aria-labelledby="tab-readout" class="pane">
+      <div id="warnBox" class="warnbox" aria-live="polite"></div>
+      <table class="readout" aria-describedby="readoutNote">
+        <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Now</th><th scope="col" class="num">Change</th><th scope="col" class="num">Male norm</th><th scope="col"><span class="vh">Status</span></th></tr></thead>
+        <tbody id="readoutBody"></tbody>
+      </table>
+      <p id="readoutNote" class="fine">Recomputed every frame from the landmarks that ride on each piece, with the definitions of the project's movement simulator (sim.py): lateral-ceph projection in the Frankfort frame, bilateral points averaged. Chips: green within 1 SD of the male norm, amber within 2 SD, red beyond. Hard tissue only: <strong>soft tissue (lips, nose, chin pad) is out of scope here</strong>.</p>
+      <p id="simCheck" class="fine"></p>
+    </section>
+    <section id="pane-plan" role="tabpanel" aria-labelledby="tab-plan" class="pane" hidden>
+      <p class="sub">Each preset animates the pieces with the simulator's rules (the mandible is propped or seated on the occlusion). Presets add to the current plan; hand moves made since the last plan are replaced (Undo brings them back).</p>
+      <div id="presets"></div>
+      <details id="builderBox">
+        <summary>All plan fields (simulator schema)</summary>
+        <div id="builder"></div>
+      </details>
+    </section>
+    <section id="pane-missions" role="tabpanel" aria-labelledby="tab-missions" class="pane" hidden>
+      <div id="missions"></div>
+    </section>
+  </aside>
+</div>
+
+<dialog id="dlgExport" aria-labelledby="dlgExportTitle">
+  <form method="dialog" class="dlg">
+    <h2 id="dlgExportTitle">Export or import a plan</h2>
+    <p class="sub">Downloads are blocked in some hosts, so the plan is shown as text. Copy it, or paste a plan (this format, or a plain sim.py plan JSON) and press Import.</p>
+    <label for="exportText" class="lbl">Plan JSON</label>
+    <textarea id="exportText" spellcheck="false" rows="16"></textarea>
+    <div class="row">
+      <button type="button" id="btnCopy">Copy</button>
+      <button type="button" id="btnImport">Import pasted JSON</button>
+      <span id="copyMsg" class="sub" aria-live="polite"></span>
+      <button value="close" class="right">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgAbout" aria-labelledby="dlgAboutTitle">
+  <form method="dialog" class="dlg">
+    <h2 id="dlgAboutTitle">About this sandbox</h2>
+    <div id="aboutBody" class="about"></div>
+    <div class="row"><button value="close" class="right">Close</button></div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="missions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
