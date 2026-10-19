@@ -98,12 +98,33 @@ td.good{color:var(--ok)} td.warnc{color:var(--warn)} td.badc{color:var(--bad)}
 .hbar.ret{background:var(--ok)}
 .disclaimer{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--surface);border-radius:0 6px 6px 0;padding:10px 14px;font-size:.88rem;color:var(--ink2)}
 .kicker{font-size:.95rem;color:var(--ink)}
+.intro{display:grid;gap:12px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.intro h2{margin:0;font-size:1.2rem}
+.scanline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.92rem;color:var(--ink2)}
+.scanpill{display:inline-flex;align-items:center;gap:7px;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.scanpill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.what{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 22px;margin:0;padding:0;list-style:none}
+.what li{display:grid;gap:3px;align-content:start;font-size:.92rem;line-height:1.45;color:var(--ink2);min-width:0}
+.what b{color:var(--ink);font-size:.98rem}
+.what .k{font-weight:600}.what .k.bone{color:var(--hard)}.what .k.skin{color:var(--soft)}
+.howto{margin:0;font-size:.86rem;color:var(--mute)}
+@media(max-width:760px){.what{grid-template-columns:minmax(0,1fr)}}
 </style>
 
 <div class="wrap">
 <header>
   <div class="eyebrow">CBCT cephalometric re-analysis · version 2 · adult male, 22 · Planmeca Viso G7 · 0.45 mm</div>
   <h1>CBCT Ceph Atlas</h1>
+  <div class="intro" role="region" aria-label="What you are looking at">
+    <div class="scanline"><span class="scanpill">Skull monitoring · Scan 1</span><span>Baseline scan, taken before jaw expansion began in October 2026. Follow-up scans will be added here to show how the bones change.</span></div>
+    <h2>What you're looking at</h2>
+    <ul class="what">
+      <li><b>A real skull in 3D</b><span>The bones and teeth of the person who built this site, rebuilt from a dental CT scan (CBCT). Only bone and teeth are rendered; no face is shown.</span></li>
+      <li><b>Labelled anatomical points</b><span><span id="i-lm">90</span> points that orthodontists and jaw surgeons measure from. <span class="k bone">Orange</span> points sit on bone, <span class="k skin">blue</span> points on the skin surface.</span></li>
+      <li><b>What the numbers say</b><span><span id="i-ms">165</span> standard measurements compared with typical adult men, showing what is off and by how much, plus simulations of the planned expansion and jaw surgery.</span></li>
+    </ul>
+    <p class="howto">Drag the skull to turn it, scroll or pinch to zoom, and click any label to list every measurement that uses it.</p>
+  </div>
   <p class="lead">Full re-landmarking of one head CBCT by independent agents (two landmarkers per region, one adversarial verifier per landmark, sourced adult-male norms, two adversarial re-derivations of every number). This version supersedes the first study, which contained landmark and norm errors listed at the bottom. Click any label on the skull, or any row in the tables, to see the measurements that use it.</p>
   <div class="meta"><span id="meta-lm"></span><span id="meta-ms"></span><span>FH fit residual 0.16 mm</span><span>scanner pitch 3.9° chin-down vs FH · roll 1.6°</span><span id="meta-mesh">model loading…</span></div>
   <div class="disclaimer"><b>Released openly by the person scanned.</b> Bone surface and measurements only — no name, date of birth, record numbers or facial photographs. The treatment sections are computer simulations built to explore options; they are planning-grade estimates, not a prescription and not medical advice.</div>
@@ -400,7 +421,7 @@ const zcls=z=>z==null?'na':(Math.abs(z)<1?'ok':(Math.abs(z)<2?'warn':'bad'));
 
 /* ---------- verdict tiles ---------- */
 const K=D.keys;
-$('meta-lm').textContent=Object.keys(LM).length+' landmarks'; $('meta-ms').textContent=MS.length+' measurements'; $('h-tables').textContent=MS.length+' measurements against adult-male norms';
+$('meta-lm').textContent=Object.keys(LM).length+' landmarks'; if($('i-lm'))$('i-lm').textContent=Object.keys(LM).length; if($('i-ms'))$('i-ms').textContent=MS.length; $('meta-ms').textContent=MS.length+' measurements'; $('h-tables').textContent=MS.length+' measurements against adult-male norms';
 $('h-verdict').textContent='Class III jaw discrepancy of 8–12 mm on a short, wide, horizontal-growth face: a mildly retrusive maxilla (1–4 mm in the Frankfort frame, 5–8 mm in a chin-down natural head position), a mandible of normal length rotated forward so that the chin sits 4–11 mm ahead of a balanced male, and a maxilla 10 mm too narrow';
 const row=k=>MS.find(m=>m.key===k)||{};
 const CoGoRow=row('Jarabak|Co-Go ramus height');
