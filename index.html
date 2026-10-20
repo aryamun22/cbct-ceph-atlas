@@ -1,320 +1,1284 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CBCT Ceph Atlas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<meta name="description" content="An open cephalometric atlas of one baseline head CBCT: 3D skull, landmarks, measurements and simulated treatment.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg fill='none' stroke='%23006b82' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='10' cy='10' r='6.5'/%3E%3Cpath d='M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4'/%3E%3C/g%3E%3Ccircle cx='10' cy='10' r='1.7' fill='%23006b82'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400..500&family=Hanken+Grotesk:wght@300..600&display=swap">
+<script>try{var t=localStorage.getItem('atlas-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <style>
+/* =========================================================
+   1. TOKENS
+   Colour values sit only in the three token blocks below.
+   ========================================================= */
 :root{
-  --bg:#f5f6f4; --surface:#ffffff; --ink:#1b232c; --ink2:#4d5966; --mute:#7d8894; --line:#d9dee3;
-  --accent:#1e6b86; --accent-soft:#dcecf2; --ok:#3a7a4c; --warn:#b8811f; --bad:#b0392c; --bad-soft:#f6e3e0; --warn-soft:#f7ecd6; --ok-soft:#e1efe4;
-  --hard:#e0563c; --soft:#2f8fb8; --ghost:#9aa5b1; --canvas:#0b1014; --bone:#e9e2d3;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#12181e; --surface:#1a222b; --ink:#e7ebee; --ink2:#b5bfc8; --mute:#8a96a2; --line:#2c3742;
-  --accent:#5fb0cf; --accent-soft:#1d3440; --ok:#6fbf84; --warn:#d9a54a; --bad:#e2725f; --bad-soft:#3b2320; --warn-soft:#3a2f18; --ok-soft:#1f3326;
-  --hard:#ff7a5c; --soft:#5fb7de; --ghost:#5b6874; --canvas:#07090c; --bone:#e9e2d3;
-}}
-:root[data-theme="dark"]{
-  --bg:#12181e; --surface:#1a222b; --ink:#e7ebee; --ink2:#b5bfc8; --mute:#8a96a2; --line:#2c3742;
-  --accent:#5fb0cf; --accent-soft:#1d3440; --ok:#6fbf84; --warn:#d9a54a; --bad:#e2725f; --bad-soft:#3b2320; --warn-soft:#3a2f18; --ok-soft:#1f3326;
-  --hard:#ff7a5c; --soft:#5fb7de; --ghost:#5b6874; --canvas:#07090c; --bone:#e9e2d3;
-}
-body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.5;margin:0;padding-block:0 60px;padding-inline:16px}
-.wrap{max-width:1180px;margin:0 auto}
-h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;text-wrap:balance;margin:0}
-h1{font-size:2.1rem;line-height:1.15} h2{font-size:1.45rem;margin-top:6px} h3{font-size:1.05rem}
-p{max-width:70ch}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-header{padding-block:34px 18px;border-bottom:1px solid var(--line);display:grid;gap:10px}
-.meta{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 18px}
-section{padding-block:32px 8px;border-bottom:1px solid var(--line);display:grid;gap:14px}
-.lead{font-size:1.05rem;color:var(--ink2)}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:4px;border-left:4px solid var(--line)}
-.tile.bad{border-left-color:var(--bad)} .tile.warn{border-left-color:var(--warn)} .tile.ok{border-left-color:var(--ok)}
-.tile .k{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
-.tile .v{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-variant-numeric:tabular-nums}
-.tile .n{font-size:.84rem;color:var(--ink2)}
-.pill{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.04em;padding:1px 8px;border-radius:999px;text-transform:uppercase}
-.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.na{background:var(--accent-soft);color:var(--accent)}
-table{border-collapse:collapse;width:100%;font-size:.86rem;background:var(--surface)}
-th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);font-weight:600}
-td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
-tr.sel td{background:var(--accent-soft)}
-tbody tr[data-key]{cursor:pointer} tbody tr[data-key]:hover td{background:var(--accent-soft)}
-.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
-#tablist{min-width:0} section{grid-template-columns:minmax(0,1fr)}
-.lbl:hover,.lbl:focus-visible{z-index:6 !important}
-.note{background:var(--accent-soft);border-radius:6px;padding:12px 14px;font-size:.9rem}
-.callout{border-left:4px solid var(--bad);padding:8px 14px;background:var(--surface);border-radius:0 6px 6px 0}
-ul{margin:0;padding-left:20px} li{margin-bottom:4px}
-button,select,input[type=search]{font:inherit;font-size:.82rem;padding:5px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;cursor:pointer}
-button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-button:focus-visible,select:focus-visible,input:focus-visible,.lbl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-/* viewer */
-.viewer{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
-@media(max-width:900px){.viewer{grid-template-columns:1fr}}
-.stage{position:relative;background:var(--canvas);border-radius:8px;overflow:hidden;height:min(72vh,720px);min-height:420px}
-.stage canvas{display:block;width:100%;height:100%}
-.labels{position:absolute;inset:0;pointer-events:none}
-.lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:2px 5px;white-space:nowrap;user-select:none}
-.lbl.bone{border-color:rgba(255,122,92,.8)} .lbl.soft{border-color:rgba(95,183,222,.8)}
-.lbl.sel{background:var(--accent);border-color:#fff;color:#fff;font-weight:600;z-index:3}
-.lbl.dim{opacity:.35}
-.lbl::before{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:inherit;display:none}
-.hud{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-wrap:wrap;gap:6px;z-index:4}
-.hud button,.hud select{font-size:.75rem;padding:4px 8px;background:rgba(20,26,32,.85);color:#e8ecf0;border-color:#3a4652}
-.hud button[aria-pressed="true"]{border-color:#8fd3f4;color:#8fd3f4}
-.status{position:absolute;left:10px;bottom:10px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:#9aa5b1;z-index:4}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:10px;align-content:start;max-height:min(72vh,720px);overflow:auto}
-.panel h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.panel .sub{font-size:.8rem;color:var(--mute)}
-.mrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
-.mrow:hover{background:var(--accent-soft)}
-.mrow .name{font-size:.86rem} .mrow .an{font-size:.72rem;color:var(--mute)}
-.mrow .val{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;font-size:.9rem}
-.mrow .z{font-size:.72rem;text-align:right}
-.bar{grid-column:1/-1;height:4px;background:var(--line);border-radius:2px;position:relative;margin-top:2px}
-.bar i{position:absolute;top:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
-.bar b{position:absolute;left:50%;top:-1px;width:1px;height:6px;background:var(--mute)}
-.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--ink2)}
-.legend span::before{content:"";display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle;background:var(--c)}
-.two{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.two>*{min-width:0}
-@media(max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
-.search{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.search input{min-width:220px;flex:1}
-@media (prefers-reduced-motion:reduce){ .stage{scroll-behavior:auto} }
-/* site nav + plan sections */
-.topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px;display:flex;gap:4px 14px;flex-wrap:wrap;font-size:.82rem}
-.topnav a{color:var(--ink2);text-decoration:none;padding:2px 0;border-bottom:2px solid transparent}
-.topnav a:hover,.topnav a:focus-visible{color:var(--accent);border-bottom-color:var(--accent);outline:none}
-section[id]{scroll-margin-top:52px}
-.step{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:"IBM Plex Mono",monospace;font-size:.75rem;font-weight:600}
-td.good{color:var(--ok)} td.warnc{color:var(--warn)} td.badc{color:var(--bad)}
-.barcell{min-width:120px}
-.hbar{height:10px;border-radius:2px;background:var(--accent);opacity:.85}
-.hbar.ret{background:var(--ok)}
-.disclaimer{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--surface);border-radius:0 6px 6px 0;padding:10px 14px;font-size:.88rem;color:var(--ink2)}
-.kicker{font-size:.95rem;color:var(--ink)}
-.intro{display:grid;gap:12px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
-.intro h2{margin:0;font-size:1.2rem}
-.scanline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.92rem;color:var(--ink2)}
-.scanpill{display:inline-flex;align-items:center;gap:7px;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
-.scanpill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.what{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 22px;margin:0;padding:0;list-style:none}
-.what li{display:grid;gap:3px;align-content:start;font-size:.92rem;line-height:1.45;color:var(--ink2);min-width:0}
-.what b{color:var(--ink);font-size:.98rem}
-.what .k{font-weight:600}.what .k.bone{color:var(--hard)}.what .k.skin{color:var(--soft)}
-.howto{margin:0;font-size:.86rem;color:var(--mute)}
-@media(max-width:760px){.what{grid-template-columns:minmax(0,1fr)}}
-</style>
+  color-scheme:light;
+  /* surfaces */
+  --bg:#ffffff; --bg-alt:#f5f7fa; --surface:#ffffff; --surface-sunk:#f1f4f8;
+  /* text */
+  --ink:#0c1a2b; --text:#33435a; --text-muted:#55657b; --text-quiet:#5d6c81;
+  /* lines */
+  --border:#e1e7ee; --border-strong:#cbd5e0; --border-input:#7f8da1; --rail:#e1e7ee;
+  /* accent: clinical teal-cyan */
+  --accent:#006b82; --accent-hover:#00566a; --accent-tint:#e4f3f6; --accent-line:#b5dde6;
+  --btn-bg:#006b82; --btn-bg-hover:#00566a; --btn-fg:#ffffff;
+  --focus:#006b82;
+  /* status */
+  --ok-fg:#12683e; --ok-bg:#e2f3e9;
+  --warn-fg:#875200; --warn-bg:#fbeed6;
+  --bad-fg:#b0251d; --bad-bg:#fdebe9;
+  --na-fg:#4c5c70; --na-bg:#ecf0f5;
+  /* chrome */
+  --nav-bg:rgba(255,255,255,.94);
+  --product-edge:#1b2a44;
+  --scroll-shadow:rgba(12,26,43,.16);
+  --sh-1:0 1px 2px rgba(12,26,43,.06), 0 3px 8px -3px rgba(12,26,43,.10);
+  --sh-2:0 12px 28px -10px rgba(12,26,43,.22), 0 4px 10px -6px rgba(12,26,43,.12);
+  --sh-product:0 50px 90px -30px rgba(5,12,24,.50), 0 26px 50px -26px rgba(5,12,24,.45);
+  /* hero field (always a dark field, tuned per theme) */
+  --band-base:#050c18; --scrim-rgb:5,12,24;
+  --grad-1:#3a5bff; --grad-2:#1cc8de; --grad-3:#f1c991; --grad-4:#ff6b5b;
+  --grad-alpha:1;
 
-<div class="wrap">
-<header>
-  <div class="eyebrow">CBCT cephalometric re-analysis · version 2 · adult male, 22 · Planmeca Viso G7 · 0.45 mm</div>
-  <h1>CBCT Ceph Atlas</h1>
-  <div class="intro" role="region" aria-label="What you are looking at">
-    <div class="scanline"><span class="scanpill">Skull monitoring · Scan 1</span><span>Baseline scan, taken before jaw expansion began in October 2026. Follow-up scans will be added here to show how the bones change.</span></div>
-    <h2>What you're looking at</h2>
-    <ul class="what">
-      <li><b>A real skull in 3D</b><span>The bones and teeth of the person who built this site, rebuilt from a dental CT scan (CBCT). Only bone and teeth are rendered; no face is shown.</span></li>
-      <li><b>Labelled anatomical points</b><span><span id="i-lm">90</span> points that orthodontists and jaw surgeons measure from. <span class="k bone">Orange</span> points sit on bone, <span class="k skin">blue</span> points on the skin surface.</span></li>
-      <li><b>What the numbers say</b><span><span id="i-ms">165</span> standard measurements compared with typical adult men, showing what is off and by how much, plus simulations of the planned expansion and jaw surgery.</span></li>
+  /* ALWAYS-DARK: viewer card, hero glance card, sandbox band. Never redefined. */
+  --dk-0:#050c18; --dk-1:#0a1424; --dk-2:#101d33; --dk-3:#172844; --dk-line:#22324c; --dk-line-strong:#5b7092;
+  --dk-ink:#f3f6fa; --dk-text:#b9c6d6; --dk-muted:#8a9bb2;
+  --dk-accent:#63d2e8; --dk-accent-hover:#8fe1f0;
+  --dk-accent-tint:rgba(99,210,232,.12); --dk-accent-line:rgba(99,210,232,.40);
+  --dk-ok-fg:#6fd6a0;   --dk-ok-bg:#0f2b20;
+  --dk-warn-fg:#f0bb5a; --dk-warn-bg:#2d2310;
+  --dk-bad-fg:#ff8f80;  --dk-bad-bg:#36171a;
+  --dk-na-fg:#a8b7c9;   --dk-na-bg:#17243a;
+  /* must match the 3D colours hard-coded in script C */
+  --lm-bone:#ff7a5c; --lm-soft:#5fb7de; --ln-ref:#8fd3f4; --ln-plane:#ffd166; --ln-sel:#7cffb2;
+  /* overlays on the hero field, HUD, labels, glance card */
+  --on-band-1:#ffffff; --on-band-2:rgba(255,255,255,.80); --on-band-3:rgba(255,255,255,.72); --on-band-pill:rgba(255,255,255,.88);
+  --on-band-fill:rgba(255,255,255,.08); --on-band-line:rgba(255,255,255,.18); --on-band-hair:rgba(255,255,255,.10);
+  --on-band-btn-line:rgba(255,255,255,.32); --iso-line:rgba(255,255,255,.055);
+  --glance-bg:rgba(10,20,36,.82); --hud-bg:#0a1424; --lbl-bg:rgba(5,12,24,.74);
+  --hud-on-bg:rgba(99,210,232,.12); --hud-on-line:rgba(99,210,232,.55);
+  --mask-solid:#000000; /* alpha source for mask-image only */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0a1322; --bg-alt:#0f1b2f; --surface:#101c30; --surface-sunk:#0c1626;
+    --ink:#f1f5fa; --text:#c1cddb; --text-muted:#97a8bd; --text-quiet:#8a9cb3;
+    --border:#1c2a40; --border-strong:#2a3b55; --border-input:#5a6f8f; --rail:#1c2a40;
+    --accent:#56c6dd; --accent-hover:#86d9ea; --accent-tint:#0f2a36; --accent-line:#1f4e5c;
+    --btn-bg:#56c6dd; --btn-bg-hover:#86d9ea; --btn-fg:#04131d;
+    --focus:#56c6dd;
+    --ok-fg:#6fd6a0; --ok-bg:#0f2b20; --warn-fg:#f0bb5a; --warn-bg:#2d2310;
+    --bad-fg:#ff8f80; --bad-bg:#36171a; --na-fg:#a8b7c9; --na-bg:#17243a;
+    --nav-bg:rgba(10,19,34,.92);
+    --product-edge:#34496d;
+    --scroll-shadow:rgba(0,0,0,.55);
+    --sh-1:0 1px 2px rgba(0,0,0,.30), 0 3px 8px -3px rgba(0,0,0,.35);
+    --sh-2:0 12px 28px -10px rgba(0,0,0,.55), 0 4px 10px -6px rgba(0,0,0,.40);
+    --sh-product:0 50px 90px -30px rgba(0,0,0,.70), 0 26px 50px -26px rgba(0,0,0,.60);
+    --band-base:#040a14; --scrim-rgb:4,10,20;
+    --grad-1:#3350e6; --grad-2:#19b3c8; --grad-3:#d9b57f; --grad-4:#e85f51;
+    --grad-alpha:.72;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0a1322; --bg-alt:#0f1b2f; --surface:#101c30; --surface-sunk:#0c1626;
+  --ink:#f1f5fa; --text:#c1cddb; --text-muted:#97a8bd; --text-quiet:#8a9cb3;
+  --border:#1c2a40; --border-strong:#2a3b55; --border-input:#5a6f8f; --rail:#1c2a40;
+  --accent:#56c6dd; --accent-hover:#86d9ea; --accent-tint:#0f2a36; --accent-line:#1f4e5c;
+  --btn-bg:#56c6dd; --btn-bg-hover:#86d9ea; --btn-fg:#04131d;
+  --focus:#56c6dd;
+  --ok-fg:#6fd6a0; --ok-bg:#0f2b20; --warn-fg:#f0bb5a; --warn-bg:#2d2310;
+  --bad-fg:#ff8f80; --bad-bg:#36171a; --na-fg:#a8b7c9; --na-bg:#17243a;
+  --nav-bg:rgba(10,19,34,.92);
+  --product-edge:#34496d;
+  --scroll-shadow:rgba(0,0,0,.55);
+  --sh-1:0 1px 2px rgba(0,0,0,.30), 0 3px 8px -3px rgba(0,0,0,.35);
+  --sh-2:0 12px 28px -10px rgba(0,0,0,.55), 0 4px 10px -6px rgba(0,0,0,.40);
+  --sh-product:0 50px 90px -30px rgba(0,0,0,.70), 0 26px 50px -26px rgba(0,0,0,.60);
+  --band-base:#040a14; --scrim-rgb:4,10,20;
+  --grad-1:#3350e6; --grad-2:#19b3c8; --grad-3:#d9b57f; --grad-4:#e85f51;
+  --grad-alpha:.72;
+}
+/* Theme by scope: always-dark regions remap the semantic tokens to --dk-* only. */
+.on-dark{
+  color-scheme:dark; color:var(--dk-text);
+  --bg:var(--dk-0); --surface:var(--dk-1); --surface-sunk:var(--dk-2);
+  --ink:var(--dk-ink); --text:var(--dk-text); --text-muted:var(--dk-muted); --text-quiet:var(--dk-muted);
+  --border:var(--dk-line); --border-strong:var(--dk-line-strong); --border-input:var(--dk-line-strong); --rail:var(--dk-line);
+  --accent:var(--dk-accent); --accent-hover:var(--dk-accent-hover);
+  --accent-tint:var(--dk-accent-tint); --accent-line:var(--dk-accent-line);
+  --btn-bg:var(--dk-accent); --btn-bg-hover:var(--dk-accent-hover); --btn-fg:var(--dk-0);
+  --focus:var(--dk-accent);
+  --ok-fg:var(--dk-ok-fg); --ok-bg:var(--dk-ok-bg); --warn-fg:var(--dk-warn-fg); --warn-bg:var(--dk-warn-bg);
+  --bad-fg:var(--dk-bad-fg); --bad-bg:var(--dk-bad-bg); --na-fg:var(--dk-na-fg); --na-bg:var(--dk-na-bg);
+}
+
+/* Non-colour tokens: type, space, radii, motion, layers, layout */
+:root{
+  --font-sans:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* tnum check (19 Oct 2026, Chrome): Hanken Grotesk 300 at 44px renders "1111" and "0000" at 99px
+     with tabular-nums AND with proportional-nums, so its default figures are already equal-width.
+     tabular-nums is still declared on every numeric element; table numerics use Geist Mono. */
+  /* fluid between 375 and 1280 */
+  --fs-display:clamp(38px, 27.2px + 2.87vw, 64px);
+  --fs-h2:clamp(24px, 19px + 1.33vw, 36px);
+  --fs-stat:clamp(30px, 24.2px + 1.55vw, 44px);
+  --fs-h3:clamp(19px, 17.8px + .33vw, 22px);
+  --fs-lead:clamp(17px, 15.8px + .33vw, 20px);
+  --fs-value:clamp(20px, 19.2px + .22vw, 22px);
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --sp-7:40px; --sp-8:48px; --sp-9:64px; --sp-10:80px; --sp-11:96px; --sp-12:128px;
+  --r-1:4px; --r-2:8px; --r-3:12px; --r-pill:999px;
+  --ease:cubic-bezier(.2,.8,.2,1); --ease-inout:cubic-bezier(.6,0,.3,1);
+  --dur-fast:160ms; --dur:240ms; --dur-slow:360ms;
+  --z-labels:1; --z-stage-ui:3; --z-toolbar:5; --z-nav:50; --z-menu:60; --z-skip:100;
+  --frame:1248px; --tb-h:68px;
+  /* phone defaults, raised at 640 and 1024 */
+  --gutter:16px; --wrap-pad:0px; --nav-h:56px;
+  --overlap:112px; --hero-top:40px;
+  --sec-pad:56px; --head-gap:24px; --block-gap:40px;
+  --stage-h:clamp(320px, 56vh, 460px);
+  --angle:6deg; --skew:min(10.5vw, 160px);
+}
+@supports (height:1svh){ :root{ --stage-h:clamp(320px, 56svh, 460px); } }
+@media (min-width:640px){
+  :root{ --gutter:24px; --nav-h:64px; --overlap:160px; --hero-top:56px;
+         --sec-pad:72px; --head-gap:32px; --block-gap:48px;
+         --stage-h:clamp(400px, 60vh, 560px); }
+}
+@media (min-width:1024px){
+  :root{ --gutter:32px; --wrap-pad:24px; --overlap:200px; --hero-top:80px;
+         --sec-pad:96px; --head-gap:40px; --block-gap:64px;
+         --stage-h:clamp(460px, 66vh, 640px); }
+}
+
+/* =========================================================
+   2. BASE
+   ========================================================= */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font:400 16px/1.6 var(--font-sans);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
+p,li{text-wrap:pretty}
+p{margin:0}
+b,strong{font-weight:500;color:var(--ink)}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--accent-hover)}
+button,input,select{font:inherit;color:inherit}
+svg{flex:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.nowrap{white-space:nowrap}
+.skip{position:absolute;left:16px;top:-80px;z-index:var(--z-skip);background:var(--surface);color:var(--ink);padding:10px 14px;border-radius:var(--r-1);box-shadow:var(--sh-2);font:500 15px/1.2 var(--font-sans);text-decoration:none}
+.skip:focus{top:12px}
+.wrap{width:min(100% - 2 * max(var(--gutter), env(safe-area-inset-left,0px), env(safe-area-inset-right,0px)), var(--frame));margin-inline:auto;padding-inline:var(--wrap-pad)}
+
+/* =========================================================
+   3. BUTTONS, LINKS, ARROW
+   ========================================================= */
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;font:500 15px/1 var(--font-sans);border-radius:var(--r-1);border:1px solid transparent;text-decoration:none;white-space:nowrap;cursor:pointer}
+.btn--primary{background:var(--btn-bg);color:var(--btn-fg)}
+.btn--primary:hover{background:var(--btn-bg-hover);color:var(--btn-fg)}
+.btn--secondary{background:transparent;color:var(--accent);border-color:var(--accent-line)}
+.btn--secondary:hover{color:var(--accent);border-color:var(--accent)}
+.btn--on-band{color:var(--on-band-1);border-color:var(--on-band-btn-line)}
+.btn--on-band:hover{color:var(--on-band-1);border-color:var(--on-band-1)}
+.btn--sm{height:36px;padding:0 14px;font-size:14px}
+.tlink{display:inline-flex;align-items:center;gap:6px;font-weight:500;text-decoration:none;color:var(--accent)}
+.arw{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+:is(.btn,.tlink,.tile-cta):is(:hover,:focus-visible) .arw{transform:translateX(2px)}
+
+/* =========================================================
+   4. NAV
+   ========================================================= */
+.nav{position:sticky;top:0;z-index:var(--z-nav);padding-top:env(safe-area-inset-top,0px);background:var(--nav-bg);box-shadow:inset 0 -1px 0 var(--border),var(--sh-1);color:var(--ink)}
+.nav:not([data-over-band]){-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px)}
+.nav-inner{height:var(--nav-h);display:flex;align-items:center;gap:8px}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:500 16px/1 var(--font-sans);white-space:nowrap;border-radius:var(--r-1)}
+.brand:hover{color:var(--ink)}
+.nav .brand{min-width:0}
+.nav .brand span{overflow:hidden;text-overflow:ellipsis}
+.nav-right{flex:none}
+.mark{display:block}
+.nav-links{display:none;list-style:none;margin:0 0 0 20px;padding:0;gap:2px}
+.nav-links a{display:block;padding:8px 10px;border-radius:var(--r-1);font:500 14px/1.2 var(--font-sans);color:var(--text);text-decoration:none}
+.nav-links a:hover{color:var(--ink)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;display:inline-grid;place-items:center;border:0;border-radius:var(--r-1);background:transparent;color:var(--text);cursor:pointer;padding:0}
+.icon-btn:hover{background:var(--surface-sunk);color:var(--ink)}
+#theme-btn svg{display:none}
+#theme-btn:not([data-mode]) .ti-auto,#theme-btn[data-mode="auto"] .ti-auto,#theme-btn[data-mode="light"] .ti-light,#theme-btn[data-mode="dark"] .ti-dark{display:block}
+.nav-menu>summary{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r-1);font:500 15px/1 var(--font-sans);color:var(--ink);cursor:pointer;list-style:none;user-select:none}
+.nav-menu>summary::-webkit-details-marker{display:none}
+.chev{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nav-menu[open] .chev{rotate:180deg}
+.menu-list{position:absolute;left:0;right:0;top:100%;z-index:var(--z-menu);list-style:none;margin:0;padding:8px var(--gutter) 16px;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;background:var(--surface);border-bottom:1px solid var(--border);border-radius:0 0 var(--r-2) var(--r-2);box-shadow:var(--sh-2)}
+.menu-list a{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:var(--r-1);font:500 15px/1.2 var(--font-sans);color:var(--text);text-decoration:none}
+.menu-list a:hover{background:var(--surface-sunk);color:var(--ink)}
+.menu-list .menu-sb a{color:var(--accent)}
+/* over the hero field: transparent bar, white chrome */
+.nav[data-over-band]{background:transparent;box-shadow:none}
+.nav[data-over-band] .brand,.nav[data-over-band] .icon-btn,.nav[data-over-band] .nav-menu>summary{color:var(--on-band-1)}
+.nav[data-over-band] .nav-links a{color:var(--on-band-2)}
+.nav[data-over-band] .nav-links a:hover{color:var(--on-band-1)}
+.nav[data-over-band] .icon-btn:hover{background:var(--on-band-fill)}
+.nav[data-over-band] .nav-menu>summary{border-color:var(--on-band-btn-line)}
+.nav[data-over-band] .btn--secondary{color:var(--on-band-1);border-color:var(--on-band-btn-line)}
+.nav[data-over-band] .btn--secondary:hover{border-color:var(--on-band-1)}
+.nav[data-over-band] :focus-visible{outline-color:var(--dk-accent)}
+/* an open menu always gets the solid bar */
+.nav[data-over-band]:has(.nav-menu[open]){background:var(--nav-bg);box-shadow:inset 0 -1px 0 var(--border),var(--sh-1)}
+.nav[data-over-band]:has(.nav-menu[open]) :is(.brand,.icon-btn,.nav-menu>summary){color:var(--ink)}
+.nav[data-over-band]:has(.nav-menu[open]) .nav-menu>summary{border-color:var(--border-strong)}
+.nav[data-over-band]:has(.nav-menu[open]) .btn--secondary{color:var(--accent);border-color:var(--accent-line)}
+.nav[data-over-band]:has(.nav-menu[open]) :focus-visible{outline-color:var(--focus)}
+@media (min-width:1120px){
+  .nav-links{display:flex}
+  .nav-menu{display:none}
+}
+@media (max-width:639px){
+  .nav-sb{display:none}
+}
+section[id],#findings{scroll-margin-top:calc(var(--nav-h) + env(safe-area-inset-top,0px) + 16px)}
+
+/* =========================================================
+   5. HERO + GRADIENT FIELD (original, CSS only)
+   ========================================================= */
+.hero{position:relative;isolation:isolate;margin-top:calc(-1 * (var(--nav-h) + env(safe-area-inset-top,0px)));padding-top:calc(var(--nav-h) + env(safe-area-inset-top,0px) + var(--hero-top));padding-bottom:calc(56px + var(--overlap));color:var(--on-band-2)}
+.band{position:absolute;inset:0;z-index:-1;background:var(--band-base);overflow:hidden;contain:paint;isolation:isolate;clip-path:polygon(0 0,100% 0,100% calc(100% - var(--skew)),0 100%)}
+.band i{position:absolute;display:block}
+.blob{aspect-ratio:1;width:var(--d);left:var(--x);top:var(--y);translate:-50% -50%;border-radius:50%;background:radial-gradient(closest-side,var(--c),transparent 72%);opacity:var(--grad-alpha);will-change:transform}
+.b1{--c:var(--grad-1);--d:72vw;--x:80%;--y:8%;animation:blob1 34s var(--ease-inout) infinite alternate}
+.b2{--c:var(--grad-2);--d:48vw;--x:82%;--y:48%;animation:blob2 41s var(--ease-inout) infinite alternate}
+.b3{--c:var(--grad-3);--d:34vw;--x:70%;--y:70%;animation:blob3 47s var(--ease-inout) infinite alternate}
+.b4{--c:var(--grad-4);--d:26vw;--x:104%;--y:36%;opacity:calc(var(--grad-alpha) * .7);animation:blob4 29s var(--ease-inout) infinite alternate}
+@keyframes blob1{from{transform:translate(0,0) scale(1)}to{transform:translate(-7%,9%) scale(1.12)}}
+@keyframes blob2{from{transform:translate(0,0) scale(1)}to{transform:translate(-10%,-6%) scale(1.08)}}
+@keyframes blob3{from{transform:translate(0,0) scale(.95)}to{transform:translate(8%,-5%) scale(1.1)}}
+@keyframes blob4{from{transform:translate(0,0) scale(1)}to{transform:translate(-12%,10%) scale(1.15)}}
+.band.is-paused .blob{animation-play-state:paused}
+/* iso-contour rings: the bone is a 320 HU iso-surface */
+.iso{inset:0;background:repeating-radial-gradient(circle at 86% 34%,transparent 0 27px,var(--iso-line) 27px 28px);-webkit-mask-image:linear-gradient(100deg,transparent 35%,var(--mask-solid) 70%);mask-image:linear-gradient(100deg,transparent 35%,var(--mask-solid) 70%)}
+/* scrim: mandatory, keeps hero text at >= 7:1 */
+.scrim{inset:0;background:linear-gradient(180deg,rgba(var(--scrim-rgb),.88) 0%,rgba(var(--scrim-rgb),.62) 55%,rgba(var(--scrim-rgb),0) 88%)}
+.grain{inset:0;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+@media (min-width:1024px){
+  .scrim{background:linear-gradient(90deg,rgba(var(--scrim-rgb),.86) 0%,rgba(var(--scrim-rgb),.60) 40%,rgba(var(--scrim-rgb),0) 62%)}
+}
+@media (max-width:639px){
+  .b1{--d:120vw;--x:85%;--y:4%}
+  .b2{--d:90vw;--x:90%;--y:78%}
+  .b3{--d:70vw;--x:30%;--y:98%}
+  .b4{display:none !important}
+  .iso{background:repeating-radial-gradient(circle at 90% 85%,transparent 0 27px,var(--iso-line) 27px 28px);-webkit-mask-image:linear-gradient(180deg,transparent 35%,var(--mask-solid) 70%);mask-image:linear-gradient(180deg,transparent 35%,var(--mask-solid) 70%)}
+}
+
+.hero-inner{position:relative}
+.hero-text{max-width:760px}
+.scan-pill{display:inline-flex;align-items:center;gap:8px;max-width:100%;height:30px;padding:0 12px;border-radius:var(--r-pill);background:var(--on-band-fill);border:1px solid var(--on-band-line);color:var(--on-band-pill);font:500 13px/1 var(--font-sans);white-space:nowrap}
+.scan-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--grad-2);flex:none}
+#hero-title{margin-top:24px;font-size:var(--fs-display);font-weight:300;line-height:1.04;letter-spacing:-.028em;color:var(--on-band-1)}
+#hero-title .tt-sub{color:var(--on-band-3)}
+.hero-lead{margin-top:20px;max-width:34em;font-size:var(--fs-lead);font-weight:350;line-height:1.5;letter-spacing:-.005em;color:var(--on-band-2)}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.hero-note{margin-top:16px;max-width:56ch;font-size:13px;line-height:1.45;color:var(--on-band-3)}
+#hero-sentinel{height:1px}
+/* glance card */
+.glance{margin-top:32px;background:var(--glance-bg);border:1px solid var(--on-band-hair);border-radius:var(--r-3);box-shadow:var(--sh-product);padding:8px}
+.glance .cells-2x2{grid-template-columns:1fr 1fr;gap:0;background:none;border:0}
+.glance .cells-2x2 li{padding:20px;background:none}
+.glance .cells-2x2 li:nth-child(odd){border-right:1px solid var(--on-band-hair)}
+.glance .cells-2x2 li:nth-child(-n+2){border-bottom:1px solid var(--on-band-hair)}
+.glance .cell-v{color:var(--on-band-1)}
+.glance .cell-k{color:var(--dk-text);margin-top:8px}
+.glance-foot{display:flex;align-items:center;gap:8px;padding:12px 20px 10px;font-size:12.5px;line-height:1.4;color:var(--dk-muted)}
+.glance-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--dk-accent);flex:none}
+@media (min-width:1024px){
+  .hero-inner{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;align-items:end}
+  .hero-text{grid-column:1 / 8}
+  .glance{grid-column:8 / 13;margin-top:0}
+}
+@media (min-width:1280px){ .glance{grid-column:9 / 13} }
+@media (max-width:639px){
+  #hero-title{line-height:1.08;letter-spacing:-.02em}
+  .scan-pill{height:auto;min-height:30px;padding:6px 12px;white-space:normal;line-height:1.35;border-radius:var(--r-3);align-items:flex-start}
+  .scan-pill .dot{margin-top:4px}
+  .cta-row .btn{width:100%;height:48px;justify-content:center}
+}
+
+/* =========================================================
+   6. SECTIONS
+   ========================================================= */
+.sec{position:relative;padding-block:var(--sec-pad)}
+.sec + .sec{border-top:1px solid var(--border)}
+.viewer-sec + .sec{border-top:0}
+.sec--alt{background:var(--bg-alt);--cell-bg:var(--bg-alt)}
+@media (min-width:1024px){
+  .sec:not(.viewer-sec)::before{content:"";position:absolute;inset-block:0;left:50%;translate:-50% 0;width:min(var(--frame),100% - 64px);border-inline:1px solid var(--rail);pointer-events:none}
+}
+.sec-head{max-width:720px;margin-bottom:var(--head-gap)}
+.kicker{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;font:500 14px/1.3 var(--font-sans);letter-spacing:.005em;color:var(--accent)}
+.tt{font-size:var(--fs-h2);font-weight:300;line-height:1.14;letter-spacing:-.02em;color:var(--ink)}
+.tt-sub{color:var(--text-muted)}
+.sub-h{margin-bottom:16px;font-size:var(--fs-h3);font-weight:400;line-height:1.25;letter-spacing:-.01em;color:var(--ink)}
+.block{margin-top:var(--block-gap)}
+.caption{margin-top:12px;font-size:13px;line-height:1.45;color:var(--text-quiet)}
+.tag-sim{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:var(--r-pill);font:500 12px/1 var(--font-sans);letter-spacing:.01em;color:var(--warn-fg);background:var(--warn-bg)}
+.tag-sim::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+@media (max-width:639px){ .tt{line-height:1.22;letter-spacing:-.012em} .sub-h{line-height:1.3} }
+
+/* ---------- stat cells ---------- */
+.cells{list-style:none;margin:0;padding:0;display:grid;gap:1px;background:var(--border);border-block:1px solid var(--border)}
+.cells li{min-width:0;background:var(--cell-bg,var(--bg));padding:16px 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+.cell-v{display:block;font-size:var(--fs-stat);font-weight:300;line-height:1;letter-spacing:-.025em;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell-v small{font-size:.45em;letter-spacing:0;margin-left:.2em;color:inherit}
+/* Hanken's + and − sit on the x-height middle; lift them to the figure middle and give both one width */
+.sgn{display:inline-block;position:relative;top:-.1em;min-width:.55em;text-align:center}
+.cell-k{display:block;font-size:14px;line-height:1.4;color:var(--text-muted);max-width:30ch}
+.glance .cells li{display:block}
+@media (max-width:639px){
+  .cells:not(.cells-2x2):not(.fromto) li{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:16px;align-items:baseline}
+  .fromto li{display:block}
+  .fromto .cell-k{margin-top:8px}
+}
+@media (min-width:640px){
+  .cells-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cells-3 li{display:block;padding:24px}
+  .cells-3 li:nth-child(3n+1){padding-left:0}
+  .cells-3 .cell-k{margin-top:8px}
+}
+.fromto .from{text-decoration:none;color:var(--text-quiet);font-size:.62em;letter-spacing:-.01em}
+.fromto .arr{color:var(--text-quiet);font-size:.62em;margin-inline:.25em}
+.fromto b{font-weight:300;color:var(--ink)}
+
+/* ---------- diagnosis tiles (generated) ---------- */
+.tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-2);overflow:hidden}
+.tile{min-width:0;background:var(--surface);padding:24px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;gap:8px 12px}
+.tile .k{grid-column:1 / -1;font:500 14px/1.35 var(--font-sans);color:var(--text-muted)}
+.tile .v{grid-column:1 / -1;font-size:var(--fs-value);font-weight:300;line-height:1.25;letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+/* pill and the Norms toggle share one row; an open Norms body runs full width under them */
+.tile .pill{grid-column:1;grid-row:3;align-self:start;justify-self:start;max-width:calc(100% - 76px);white-space:normal;text-align:left}
+.tile details.n{grid-column:1 / -1;grid-row:3;min-width:0;font-size:13.5px;line-height:1.55;color:var(--text);font-variant-numeric:tabular-nums}
+.tile details.n>summary{display:flex;align-items:center;gap:8px;width:max-content;min-height:22px;margin-left:auto;padding:2px 0;font:500 13px/1.3 var(--font-sans);color:var(--text-quiet);cursor:pointer;list-style:none;border-radius:var(--r-1)}
+.tile details.n>summary:hover{color:var(--accent)}
+.tile details.n>summary::-webkit-details-marker{display:none}
+.tile details.n>summary::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;rotate:-45deg;margin-top:-1px}
+.tile details.n[open]>summary{margin-bottom:8px;color:var(--accent)}
+.tile details.n[open]>summary::after{rotate:45deg;margin-top:-4px}
+/* closing cell: opens the technical findings */
+.tile-cta{display:flex;align-items:center;gap:10px;min-width:0;padding:24px;background:var(--surface);color:var(--accent);font:500 16px/1.35 var(--font-sans);text-decoration:none}
+.tile-cta:hover{background:var(--surface-sunk);color:var(--accent-hover)}
+.tile-cta:focus-visible{outline-offset:-3px}
+@media (min-width:640px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tiles>.tile-cta:nth-child(odd){grid-column:1 / -1}
+}
+@media (min-width:1024px){
+  .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tiles>.tile-cta:nth-child(odd){grid-column:auto}
+  .tiles>.tile-cta:nth-child(3n+1){grid-column:1 / -1}
+  .tiles>.tile-cta:nth-child(3n+2){grid-column:span 2}
+}
+@media (max-width:639px){
+  .tile,.tile-cta{padding:16px}
+}
+
+/* ---------- pills (generated) ---------- */
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:22px;padding:3px 8px;border-radius:var(--r-pill);font:500 12px/1.2 var(--font-sans);white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.pill.ok{color:var(--ok-fg);background:var(--ok-bg)}
+.pill.warn{color:var(--warn-fg);background:var(--warn-bg)}
+.pill.bad{color:var(--bad-fg);background:var(--bad-bg)}
+.pill.na{color:var(--na-fg);background:var(--na-bg)}
+:is(#tablist,.mrow) .pill{font-family:var(--font-mono);font-variant-numeric:tabular-nums;min-width:56px;justify-content:center}
+
+/* ---------- tables ---------- */
+/* Cells are transparent so the container's scroll shadows show: a cover gradient scrolls with the
+   content (local) and hides the shadow (scroll) once the table is scrolled to its end. */
+.tblwrap{overflow:auto;border:1px solid var(--border);border-radius:var(--r-2);overscroll-behavior-x:contain;
+  background:
+    linear-gradient(to left,var(--surface) 45%,transparent) 100% 0 / 36px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%,var(--scroll-shadow),transparent) 100% 0 / 14px 100% no-repeat scroll,
+    var(--surface)}
+/* only the long reference table (inside a closed disclosure) keeps a height cap, with a bottom cue */
+.tblwrap--cap{max-height:min(72vh,680px);
+  background:
+    linear-gradient(to left,var(--surface) 45%,transparent) 100% 0 / 36px 100% no-repeat local,
+    linear-gradient(to top,var(--surface) 45%,transparent) 0 100% / 100% 36px no-repeat local,
+    radial-gradient(farthest-side at 100% 50%,var(--scroll-shadow),transparent) 100% 0 / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%,var(--scroll-shadow),transparent) 0 100% / 100% 14px no-repeat scroll,
+    var(--surface)}
+.tblwrap table{width:100%;border-collapse:separate;border-spacing:0;font:400 14px/1.45 var(--font-sans);color:var(--text)}
+.tblwrap th{position:sticky;top:0;z-index:1;background:var(--surface-sunk);color:var(--text-quiet);font:500 12.5px/1.3 var(--font-sans);letter-spacing:.01em;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tblwrap td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.tblwrap tbody tr:last-child td{border-bottom:0}
+.tblwrap tr>:first-child{position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--border);min-width:10em}
+.tblwrap td:first-child{background:var(--surface)}
+.tblwrap thead tr>:first-child{z-index:2}
+#movetable tr>:first-child{min-width:0;width:2.5em}
+.tblwrap td.num{font:400 13px/1.45 var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;color:var(--ink)}
+:is(#outtable,#segtable,#laddertable,#indextable,#exptable,#nolftable,#reftable) th:not(:first-child){text-align:right}
+#strtable th:nth-child(n+3):nth-child(-n+4){text-align:right}
+#tablist th:nth-child(n+2):nth-child(-n+5){text-align:right}
+/* Script B's T() writes class "num" on every non-first cell whose cls is '' (o.cls||'num'),
+   so descriptive columns are re-set to prose here, scoped by table and column. */
+#movetable td.num{font:400 14px/1.45 var(--font-sans);color:var(--text);text-align:left;white-space:normal;min-width:9em}
+#movetable td.num:nth-child(4){font-variant-numeric:tabular-nums;color:var(--ink);min-width:11em}
+#movetable td.num:nth-child(3){min-width:18em}
+#movetable td.num:nth-child(5){min-width:14em}
+#strtable td.num:nth-child(2){font:400 14px/1.45 var(--font-sans);font-variant-numeric:tabular-nums;text-align:left}
+#strtable td.num:last-child{font:400 14px/1.45 var(--font-sans);color:var(--text);text-align:left;white-space:normal;min-width:240px}
+#segtable tr>:first-child{white-space:nowrap}
+#laddertable th:last-child,.tblwrap td.barcell{text-align:left}
+.tblwrap td.sub{font:400 13px/1.5 var(--font-sans);color:var(--text-muted);min-width:260px;max-width:48ch;white-space:normal}
+.tblwrap td.good{color:var(--ok-fg);font-weight:500}
+.tblwrap td.badc{color:var(--bad-fg);font-weight:500}
+#segtable .sub{font:400 12px/1 var(--font-mono);color:var(--text-quiet);margin-left:2px}
+.tblwrap td.barcell{min-width:160px}
+.hbar{height:6px;border-radius:3px;background:var(--accent);margin-top:6px}
+.hbar.ret{background:var(--ok-fg);margin-top:3px}
+.tblwrap tr[data-key]{cursor:pointer}
+.tblwrap tr[data-key]:hover td{background:var(--accent-tint)}
+.tblwrap tr.sel td{background:var(--accent-tint)}
+.tblwrap tr.sel>:first-child{box-shadow:inset 2px 0 0 var(--accent),1px 0 0 var(--border)}
+.tblwrap tr[data-key]:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+#tablist h3{margin:32px 0 12px !important;font:500 16px/1.3 var(--font-sans);color:var(--ink)}
+#tablist h3:first-child{margin-top:20px !important}
+/* analysis tables: one shared column grid; notes clamp to one line until the row is selected or focused */
+#tablist table{table-layout:fixed;min-width:680px}
+#tablist th:nth-child(1){width:27%}
+#tablist th:nth-child(2){width:12%}
+#tablist th:nth-child(3){width:11%}
+#tablist th:nth-child(4){width:8%}
+#tablist th:nth-child(5){width:10%}
+#tablist td:first-child{min-width:0;overflow-wrap:break-word}
+#tablist td.sub{min-width:0;max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tablist tr:is(.sel,:focus-within) td.sub{white-space:normal;overflow:visible}
+@media (max-width:639px){
+  .tblwrap table{font-size:13.5px}
+  .tblwrap td.num{font-size:12.5px}
+  .tblwrap tr>:first-child{width:40vw;min-width:40vw;max-width:40vw}
+  .tblwrap th:first-child{white-space:normal}
+  #strtable td.num:nth-child(2){white-space:normal;min-width:5.5em}
+  #strtable td.num:last-child{min-width:200px}
+  #segtable tr>:first-child{width:auto;min-width:0;max-width:none}
+  #tablist table{min-width:660px}
+  #tablist :is(th,td){padding-inline:10px}
+  #tablist th:nth-child(1){width:22%}
+  #tablist th:nth-child(2){width:13%}
+  #tablist th:nth-child(3){width:11%}
+  #tablist th:nth-child(4){width:9%}
+  #tablist th:nth-child(5){width:12%}
+}
+@media (min-width:1024px){
+  /* no sideways scroll is needed here, so the wrapper only clips and the header row sticks under the toolbar */
+  #tablist table{min-width:0}
+  #tablist .tblwrap{overflow:clip}
+  #tablist th{top:calc(var(--nav-h) + env(safe-area-inset-top,0px) + var(--tb-h))}
+}
+
+/* ---------- analysis chips, search, toolbar ---------- */
+.toolbar{position:relative;display:grid;gap:12px;padding-block:12px;background:var(--bg)}
+.tb-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.search-field{position:relative;display:block;flex:1 1 260px;max-width:520px}
+.search-field svg{position:absolute;left:14px;top:50%;translate:0 -50%;color:var(--text-quiet);pointer-events:none}
+#q{display:block;width:100%;height:44px;padding:0 14px 0 40px;border:1px solid var(--border-input);border-radius:var(--r-1);background:var(--surface);font:400 15px/1 var(--font-sans);color:var(--ink);-webkit-appearance:none;appearance:none}
+#q::placeholder{color:var(--text-quiet);opacity:1}
+#q:focus{border-color:var(--accent)}
+#an-sel{height:44px;max-width:100%;padding:0 12px;border:1px solid var(--border-input);border-radius:var(--r-1);background:var(--surface);color:var(--ink);font:400 15px/1 var(--font-sans);cursor:pointer}
+#count{margin-left:auto;font:400 13px/1 var(--font-mono);color:var(--text-quiet);white-space:nowrap;font-variant-numeric:tabular-nums}
+.toolbar.has-chips #an-sel{position:absolute;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none;overflow:hidden}
+.chip-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:4px 16px;-webkit-mask-image:linear-gradient(90deg,transparent,var(--mask-solid) 16px,var(--mask-solid) calc(100% - 16px),transparent);mask-image:linear-gradient(90deg,transparent,var(--mask-solid) 16px,var(--mask-solid) calc(100% - 16px),transparent)}
+.chip-row::-webkit-scrollbar{display:none}
+.chip-row:empty{display:none}
+.chip-tab{flex:none;height:32px;padding:0 12px;border-radius:var(--r-pill);font:500 13.5px/1 var(--font-sans);color:var(--text);background:transparent;border:1px solid var(--border-strong);cursor:pointer;white-space:nowrap}
+.chip-tab:hover{color:var(--ink);border-color:var(--text-muted)}
+.chip-tab[aria-pressed="true"]{color:var(--btn-fg);background:var(--btn-bg);border-color:var(--btn-bg)}
+@media (min-width:640px){
+  /* the sticky bar is one row (search + count); the chips wrap below it and scroll away */
+  .toolbar{position:sticky;top:calc(var(--nav-h) + env(safe-area-inset-top,0px));z-index:var(--z-toolbar);min-height:var(--tb-h);border-bottom:1px solid var(--border)}
+  .chip-row{flex-wrap:wrap;overflow:visible;margin-inline:0;padding:16px 0 4px;-webkit-mask-image:none;mask-image:none}
+}
+@media (max-width:639px){
+  #q{font-size:16px}
+  .search-field{flex-basis:100%;max-width:none}
+}
+
+/* ---------- disclosures ---------- */
+.more-list{margin-top:40px}
+details.more{border-top:1px solid var(--border)}
+details.more:last-child{border-bottom:1px solid var(--border)}
+.more>summary{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:12px 0;font:500 16px/1.35 var(--font-sans);color:var(--ink);list-style:none;cursor:pointer}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary:hover{color:var(--accent)}
+.pm{position:relative;width:16px;height:16px;flex:none;color:var(--text-muted)}
+.more>summary:hover .pm{color:var(--accent)}
+.pm::before,.pm::after{content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;background:currentColor;border-radius:1px}
+.pm::before{width:12px;height:1.5px}
+.pm::after{width:1.5px;height:12px}
+.more[open]>summary .pm::after{rotate:90deg}
+.more-body{padding:4px 0 28px;max-width:68ch;font-size:16px;line-height:1.6;color:var(--text)}
+.more-body.wide{max-width:none}
+.more-body>*+*{margin-top:12px}
+.more-body ul,.more-body ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.more-body .src{font-size:14px;color:var(--text-muted)}
+.more-body .tblwrap{margin-top:4px}
+
+/* ---------- plan pieces ---------- */
+.needed{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
+.needed-k{font:500 14px/1.3 var(--font-sans);color:var(--ink)}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font:500 14px/1.3 var(--font-sans);color:var(--text)}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--text-muted);flex:none}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.timeline li{position:relative;padding:0 0 16px 28px;display:flex;flex-direction:column;gap:2px}
+.timeline li::before{content:"";position:absolute;left:0;top:6px;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);background:var(--cell-bg,var(--bg));z-index:1}
+.timeline li::after{content:"";position:absolute;left:4.5px;top:16px;bottom:-6px;width:1px;background:var(--border-strong)}
+.timeline li:last-child::after{display:none}
+.tl-name{font:500 15px/1.35 var(--font-sans);color:var(--ink)}
+.tl-dur{font:400 13px/1.4 var(--font-mono);color:var(--text-muted)}
+.timeline + .caption{margin-top:32px;font-size:14px;color:var(--text-muted)}
+@media (min-width:1024px){
+  .timeline{grid-template-columns:repeat(5,minmax(0,1fr));gap:24px}
+  .timeline li{padding:26px 0 0}
+  .timeline li::before{top:0}
+  .timeline li::after{left:10px;right:-24px;top:4.5px;bottom:auto;width:auto;height:1px}
+}
+.split{display:grid;gap:var(--block-gap)}
+.split>div{min-width:0}
+.answer{margin-bottom:24px;max-width:40em;font-size:var(--fs-h3);font-weight:300;line-height:1.35;color:var(--text-muted)}
+.answer strong{font-weight:400;color:var(--ink)}
+.callout{display:flex;align-items:flex-start;gap:12px;margin-top:24px;padding:16px 20px;border-radius:var(--r-2);background:var(--surface-sunk);font-size:15px;line-height:1.5;color:var(--text)}
+.callout svg{margin-top:3px;color:var(--text-muted)}
+
+/* =========================================================
+   7. VIEWER: the product card
+   ========================================================= */
+.viewer-sec{position:relative;z-index:1;margin-top:calc(-1 * var(--overlap));padding-top:0;padding-bottom:var(--sec-pad)}
+.product{background:var(--dk-1);border:1px solid var(--product-edge);border-radius:var(--r-3);box-shadow:var(--sh-product);overflow:hidden}
+.product-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 24px;padding:16px 20px;background:var(--dk-2);border-bottom:1px solid var(--dk-line)}
+.product-kicker{margin-bottom:4px;font:500 12.5px/1.3 var(--font-sans);color:var(--dk-accent)}
+#viewer-title{font:400 20px/1.2 var(--font-sans);letter-spacing:-.01em;color:var(--dk-ink)}
+.howto{font-size:13px;line-height:1.5;color:var(--dk-muted)}
+.howto kbd{font:500 12px/1 var(--font-sans);color:var(--dk-text);padding:2px 5px;border:1px solid var(--dk-line-strong);border-bottom-width:2px;border-radius:3px}
+.hw-phone{display:none}
+.viewer{display:grid;grid-template-columns:minmax(0,1fr)}
+.stage{position:relative;height:var(--stage-h);background:var(--dk-0);overflow:hidden}
+#c{display:block;width:100%;height:100%}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:var(--z-labels);overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;margin:0;font:500 11px/1 var(--font-mono);color:var(--on-band-1);background:var(--lbl-bg);border:1px solid var(--dk-line-strong);border-radius:3px;padding:3px 6px;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+.lbl.bone{border-color:var(--lm-bone)}
+.lbl.soft{border-color:var(--lm-soft)}
+.lbl.sel{background:var(--dk-accent);color:var(--dk-0);border-color:var(--dk-ink)}
+.lbl.dim{opacity:.3}
+.lbl:hover,.lbl:focus-visible{z-index:101 !important}
+.hud{position:absolute;inset:6px 6px auto 6px;z-index:var(--z-stage-ui);display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:4px 4px 6px}
+.hud::-webkit-scrollbar{display:none}
+.hud button{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-1);font:500 12.5px/1 var(--font-sans);color:var(--dk-text);background:var(--hud-bg);border:1px solid var(--dk-line-strong);cursor:pointer;white-space:nowrap}
+.hud button:hover{color:var(--dk-ink)}
+.hud button[aria-pressed]::before{content:"";width:6px;height:6px;border-radius:50%;box-shadow:inset 0 0 0 1.5px currentColor}
+.hud button[aria-pressed="true"]{color:var(--dk-accent);border-color:var(--hud-on-line);background:linear-gradient(var(--hud-on-bg),var(--hud-on-bg)),var(--hud-bg)}
+.hud button[aria-pressed="true"]::before{background:currentColor}
+.hud-seg{display:inline-flex;flex:none;margin-left:auto}
+.hud-seg button{border-radius:0;margin-left:-1px;min-width:44px;justify-content:center}
+.hud-seg button:first-child{margin-left:0;border-radius:var(--r-1) 0 0 var(--r-1)}
+.hud-seg button:last-child{border-radius:0 var(--r-1) var(--r-1) 0}
+.hud-seg button:focus-visible{position:relative;z-index:1}
+#status{position:absolute;left:10px;bottom:10px;z-index:2;max-width:calc(100% - 20px);padding:3px 8px;border-radius:var(--r-1);background:var(--lbl-bg);font:400 11.5px/1.3 var(--font-mono);color:var(--dk-muted);pointer-events:none}
+#panel{background:var(--dk-1);color:var(--dk-text);padding:20px;display:grid;gap:12px;align-content:start;overflow:auto;max-height:380px;border-top:1px solid var(--dk-line)}
+.p-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px}
+#p-title{font:400 18px/1.25 var(--font-sans);color:var(--dk-ink)}
+#p-sub{font:400 12px/1.4 var(--font-mono);color:var(--dk-muted);font-variant-numeric:tabular-nums}
+#p-desc{font-size:14px;line-height:1.5;color:var(--dk-text)}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 8px;margin-inline:-8px;border-top:1px solid var(--dk-line);border-radius:4px;cursor:pointer}
+.mrow:hover{background:var(--dk-2)}
+.mrow:focus-visible{outline:2px solid var(--dk-accent);outline-offset:-2px}
+#p-list .mrow[aria-current]{cursor:default}
+#p-list .mrow[aria-current]:hover{background:none}
+#panel:focus-visible{outline-offset:-2px}
+.mrow .name{font-size:14px;line-height:1.35;color:var(--dk-ink)}
+.mrow .val{font:400 13px/1.35 var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--dk-ink);white-space:nowrap}
+.mrow .an{font-size:12px;line-height:1.4;color:var(--dk-muted)}
+.mrow .z{text-align:right}
+.mrow .bar{grid-column:1 / -1;position:relative;height:4px;margin-top:6px;background:var(--dk-line);border-radius:2px}
+.mrow .bar b{position:absolute;left:50%;top:-2px;width:1px;height:8px;background:var(--dk-muted)}
+.mrow .bar i{position:absolute;top:-2px;width:8px;height:8px;border-radius:50%;background:var(--dk-accent);transform:translateX(-50%)}
+.product-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:14px 20px 6px;border-top:1px solid var(--dk-line)}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;line-height:1.4;color:var(--dk-text)}
+.legend li{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--sw)}
+.sw-bone{--sw:var(--lm-bone)} .sw-soft{--sw:var(--lm-soft)} .sw-ref{--sw:var(--ln-ref)} .sw-plane{--sw:var(--ln-plane)} .sw-sel{--sw:var(--ln-sel)}
+.meta{font:400 12px/1.5 var(--font-mono);color:var(--dk-muted);font-variant-numeric:tabular-nums}
+.product-foot details.more{flex:1 1 100%;border-bottom:0}
+.product-foot .more>summary{min-height:40px;padding:8px 0;font-size:14px}
+.product-foot .more-body{padding-bottom:16px;font-size:14px;line-height:1.55}
+@media (min-width:1024px){
+  .viewer{grid-template-columns:minmax(0,1fr) 340px}
+  #panel{max-height:var(--stage-h);border-top:0;border-left:1px solid var(--dk-line)}
+}
+@media (max-width:1099px){
+  .hud{-webkit-mask-image:linear-gradient(90deg,var(--mask-solid) calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,var(--mask-solid) calc(100% - 24px),transparent);padding-right:24px}
+}
+@media (max-width:639px){
+  .hw-wide{display:none}
+  .hw-phone{display:inline}
+  .lbl{font-size:10px;padding:2px 4px}
+  .product-bar{padding:14px 16px}
+  .product-foot{padding-inline:16px}
+  #panel{padding:16px}
+}
+
+/* =========================================================
+   8. ALWAYS-DARK SANDBOX BAND
+   ========================================================= */
+.band-dark{background:var(--dk-0);border-block:1px solid var(--dk-line);overflow:hidden}
+.band-dark + .sec{border-top:0}
+.band-dark .iso-bg{position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 84% 50%,transparent 0 27px,var(--iso-line) 27px 28px);-webkit-mask-image:linear-gradient(90deg,transparent 45%,var(--mask-solid) 85%);mask-image:linear-gradient(90deg,transparent 45%,var(--mask-solid) 85%)}
+.sb-grid{position:relative;display:grid;gap:40px}
+.sb-grid .tt{margin-bottom:32px}
+.sb-grid .cells li{padding:20px 0}
+.sb-cells .cell-v{min-width:1.3em}
+@media (min-width:1024px){
+  .sb-grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:center}
+  .sb-text{grid-column:1 / 8}
+  .sb-cells{grid-column:9 / 13}
+}
+
+/* =========================================================
+   9. FOOTER
+   ========================================================= */
+.foot{background:var(--bg-alt);border-top:1px solid var(--border);padding:40px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:14px;line-height:1.55;color:var(--text-muted)}
+.foot-grid{display:grid;gap:24px}
+.foot-brand p{margin-top:12px}
+.foot-notice{max-width:60ch}
+.foot-links{display:grid;gap:6px;align-content:start}
+@media (min-width:640px){ .foot{padding-block:48px calc(48px + env(safe-area-inset-bottom,0px))} }
+@media (min-width:1024px){
+  .foot{padding-block:56px calc(56px + env(safe-area-inset-bottom,0px))}
+  .foot-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);gap:48px}
+}
+
+/* =========================================================
+   10. MOTION (transitions only when motion is welcome)
+   ========================================================= */
+@media (prefers-reduced-motion: no-preference){
+  html{scroll-behavior:smooth}
+  .nav{transition:background-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+  /* no nav transitions until script D marks the page loaded, so the first paint is never mid-fade */
+  .nav:not(.is-ready),.nav:not(.is-ready) *{transition:none !important}
+  .brand,.nav-links a,.icon-btn,.nav-menu>summary,.menu-list a{transition:color var(--dur) var(--ease),background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+  .btn,.chip-tab,.hud button{transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+  .arw{transition:transform var(--dur) var(--ease)}
+  .chev{transition:rotate var(--dur) var(--ease)}
+  .more>summary,.pm{transition:color var(--dur-fast) var(--ease)}
+  .pm::after{transition:rotate var(--dur-slow) var(--ease-inout)}
+  .tile details.n>summary::after{transition:rotate var(--dur) var(--ease),margin var(--dur) var(--ease)}
+  .tblwrap td,.mrow{transition:background-color var(--dur-fast) var(--ease)}
+}
+@media (prefers-reduced-motion: reduce){
+  .blob{animation:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#viewer">Skip to the 3D skull</a>
+
+<nav class="nav" aria-label="Sections" data-over-band>
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><svg class="mark" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4"/></g><circle cx="10" cy="10" r="1.6" fill="currentColor"/></svg><span>CBCT Ceph Atlas</span></a>
+    <ul class="nav-links">
+      <li><a href="#viewer">3D skull</a></li>
+      <li><a href="#verdict">Diagnosis</a></li>
+      <li><a href="#strengths">Strengths</a></li>
+      <li><a href="#gall">Profile</a></li>
+      <li><a href="#plan">Plan</a></li>
+      <li><a href="#height">Height</a></li>
+      <li><a href="#expansion">Expansion</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#tables">Data</a></li>
     </ul>
-    <p class="howto">Drag the skull to turn it, scroll or pinch to zoom, and click any label to list every measurement that uses it.</p>
+    <div class="nav-right">
+      <details class="nav-menu">
+        <summary>Sections<svg class="chev" viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5"/></svg></summary>
+        <ul class="menu-list">
+          <li><a href="#viewer">3D skull</a></li>
+          <li><a href="#verdict">Diagnosis</a></li>
+          <li><a href="#strengths">Strengths</a></li>
+          <li><a href="#gall">Profile</a></li>
+          <li><a href="#plan">Plan</a></li>
+          <li><a href="#height">Height</a></li>
+          <li><a href="#expansion">Expansion</a></li>
+          <li><a href="#method">Method</a></li>
+          <li><a href="#tables">Data</a></li>
+          <li class="menu-sb"><a href="sandbox/">Surgery sandbox</a></li>
+        </ul>
+      </details>
+      <button type="button" id="theme-btn" class="icon-btn" aria-label="Theme: auto" title="Theme: auto">
+        <svg class="ti-auto" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"/></svg>
+        <svg class="ti-light" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="3.5"/><path d="M10 1.8v2.2M10 16v2.2M1.8 10H4M16 10h2.2M4.2 4.2l1.6 1.6M14.2 14.2l1.6 1.6M4.2 15.8l1.6-1.6M14.2 5.8l1.6-1.6"/></g></svg>
+        <svg class="ti-dark" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M16 12.6A7 7 0 0 1 7.4 4a7 7 0 1 0 8.6 8.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+      <a class="btn btn--secondary btn--sm nav-sb" href="sandbox/">Sandbox<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
   </div>
-  <p class="lead">Full re-landmarking of one head CBCT by independent agents (two landmarkers per region, one adversarial verifier per landmark, sourced adult-male norms, two adversarial re-derivations of every number). This version supersedes the first study, which contained landmark and norm errors listed at the bottom. Click any label on the skull, or any row in the tables, to see the measurements that use it.</p>
-  <div class="meta"><span id="meta-lm"></span><span id="meta-ms"></span><span>FH fit residual 0.16 mm</span><span>scanner pitch 3.9° chin-down vs FH · roll 1.6°</span><span id="meta-mesh">model loading…</span></div>
-  <div class="disclaimer"><b>Released openly by the person scanned.</b> Bone surface and measurements only — no name, date of birth, record numbers or facial photographs. The treatment sections are computer simulations built to explore options; they are planning-grade estimates, not a prescription and not medical advice.</div>
-</header>
-<nav class="topnav" aria-label="Sections">
-  <a href="#viewer">3D skull</a><a href="#verdict">Diagnosis</a><a href="#strengths">Strengths</a><a href="#gall">GALL</a><a href="#plan">Movement plan</a><a href="#height">Facial height</a><a href="#expansion">Expansion</a><a href="#tables">All measurements</a><a href="#method">Method</a><a href="sandbox/">Surgery sandbox</a>
 </nav>
 
-<section id="viewer">
-  <div class="eyebrow">Interactive skull</div>
-  <h2>Bone surface with every landmark, in the Frankfort frame</h2>
-  <div class="viewer">
-    <div class="stage" id="stage">
-      <canvas id="c" aria-label="3D bone surface from the CBCT with clickable landmarks"></canvas>
-      <div class="labels" id="labels"></div>
-      <div class="hud">
-        <button id="b-spin" aria-pressed="true">Auto-rotate</button>
-        <button id="b-bone" aria-pressed="true">Bone labels</button>
-        <button id="b-soft" aria-pressed="true">Soft-tissue labels</button>
-        <button id="b-refs" aria-pressed="true">Reference lines</button>
-        <button id="b-xray" aria-pressed="false">X-ray</button>
-        <button id="b-front">Front</button><button id="b-side">Side</button><button id="b-three">¾</button>
+<header class="hero on-dark" id="top">
+  <div class="band" aria-hidden="true">
+    <i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="blob b4"></i>
+    <i class="iso"></i><i class="scrim"></i><i class="grain"></i>
+  </div>
+  <div class="wrap hero-inner">
+    <div class="hero-text">
+      <p class="scan-pill" id="scan-status"><span class="dot" aria-hidden="true"></span><span>Scan 1 · Baseline<span class="pill-tail">, taken before expansion began in Oct 2026</span></span></p>
+      <h1 id="hero-title" class="tt"><span>One real skull,</span> <span class="tt-sub">mapped and measured.</span></h1>
+      <p class="hero-lead">A dental CT rebuilt in 3D, measured against adult-male norms, with expansion and surgery simulated.</p>
+      <div class="cta-row">
+        <a class="btn btn--primary" href="#viewer">Explore the 3D skull<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+        <a class="btn btn--secondary btn--on-band" href="sandbox/">Open the surgery sandbox<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
       </div>
-      <div class="status" id="status">loading model…</div>
+      <p class="hero-note">Released openly by the person scanned. Bone and numbers only. Plans are simulations, not medical advice.</p>
+      <div id="hero-sentinel" aria-hidden="true"></div>
     </div>
-    <div class="panel" id="panel">
-      <h3><span id="p-title">Pick a landmark</span><span class="sub" id="p-sub"></span></h3>
-      <div class="sub" id="p-desc">Orange labels are bone, blue are skin. Coordinates are mm from nasion in the Frankfort frame (lateral, superior, anterior). Vertical lines in the midline are the reference verticals: N-perp, bony glabella, soft glabella (= Andrews GALL here), FALL, and the Arnett true vertical through subnasale.</div>
-      <div id="p-list"></div>
-    </div>
-  </div>
-  <div class="legend"><span style="--c:var(--hard)">bone landmark</span><span style="--c:var(--soft)">soft-tissue landmark</span><span style="--c:#8fd3f4">reference verticals</span><span style="--c:#ffd166">FH plane / S–N / mandibular plane / occlusal plane / E-line</span><span style="--c:#7cffb2">selected measurement</span></div>
-</section>
-
-<section id="verdict">
-  <div class="eyebrow">Corrected diagnosis</div>
-  <h2 id="h-verdict"></h2>
-  <div class="grid" id="tiles"></div>
-  <ul id="headline"></ul>
-</section>
-
-<section id="strengths">
-  <div class="eyebrow">Already at the strong end</div>
-  <h2>The parts of the skeleton that need nothing</h2>
-  <p>The outer frame and the back half of the face — ramus, angle, jaw length, cheekbone width, chin, symmetry — are the hard-to-build parts, and they are already at or beyond the male norm. What is off is the front-middle: a maxilla that is narrow and a few millimetres back, a short upper lip and midface, and the bite. Three of these strengths (flat jaw plane, high posterior height ratio, forward chin) are one horizontal growth pattern; they read as strength once the front of the face has the height and projection to match them.</p>
-  <div class="tblwrap"><table id="strtable"></table></div>
-</section>
-
-<section id="gall">
-  <div class="eyebrow">The "15 mm behind" question</div>
-  <h2>Andrews' GALL: where the maxilla and incisors sit relative to the forehead</h2>
-  <div class="two">
-    <div>
-      <p><b>Rule (Andrews, Six Elements, Element II; sourced via Wu et al. 2023 and the Andrews 2008/2015 papers).</b> The Goal Anterior Limit Line is a true vertical in natural head position. It passes through the forehead's FFA point (the midpoint of the clinical forehead) when the forehead inclination is ≤ 7°; for every degree beyond 7° it moves 0.6 mm forward, but never beyond glabella. The FA point of the maxillary central incisor should sit on it.</p>
-      <p><b>Applied here.</b> Forehead inclination <span id="g-inc"></span>° (scanner vertical) / <span id="g-incfh"></span>° (Frankfort frame). The adjustment (<span id="g-adj"></span> mm) exceeds the FFA-to-glabella gap (<span id="g-gap"></span> mm), so the cap applies: <b>the GALL is the glabellar vertical</b>, <span id="g-ant"></span> mm anterior of nasion. The cap is reached at any inclination above 18°, so the GALL does not depend on the forehead being clipped by the field of view above <span id="g-sup"></span> mm (a trichion-based inclination of 25–29° would move it by at most ~1 mm).</p>
-      <div class="note" id="g-note"></div>
-    </div>
-    <div class="tblwrap"><table id="reftable"></table></div>
-  </div>
-</section>
-
-<section id="plan">
-  <div class="eyebrow">Simulated movement plan</div>
-  <h2>Maxilla wider, forward and longer; mandible left where it is</h2>
-  <p>Built in a rigid-body surgical simulator on the landmarks above, after three competing plans (Andrews + airway, Arnett soft-tissue harmony, maximum vertical) were scored by an aesthetics judge and a stability/airway judge and merged; about 420 simulator runs, independently re-derived to 0.02 mm. Constraints: the pharyngeal airway is small (70 mm² minimum cross-section), so the mandible may not move back more than 2 mm; natural head position was not recorded, so position-against-the-forehead numbers are given at 0°, 3.9° and 8° chin-down.</p>
-  <div class="tblwrap"><table id="movetable"></table></div>
-  <h3 style="margin-top:6px">What it produces</h3>
-  <div class="tblwrap"><table id="outtable"></table></div>
-  <div class="two">
-    <div>
-      <h3>Considered and rejected</h3>
-      <ul>
-        <li><b>Mandibular setback.</b> To close the bite alone it takes B 5.7 mm and pogonion 5.1 mm back — over the airway limit — and leaves the midface flat and the face no longer.</li>
-        <li><b>Chin advancement.</b> The chin is already the most forward point of the face.</li>
-        <li><b>Le Fort II / III.</b> Over-projects the upper midface (orbital rim to +1.6–2.7 SD) with a 10 mm nasofrontal step; the rims are not truly deficient — a 3 mm onlay covers them.</li>
-        <li><b>High (quadrangular) Le Fort I.</b> Subpupil area overshoots; reported vertical relapse 62–158 %.</li>
-        <li><b>Rotation-only plans</b> (downgraft without advance). Chin 4–7 mm back, bite still Class III, airway worse.</li>
-        <li><b>Inverted-L ramus lengthening.</b> Flattens an already flat jaw plane on an already long ramus.</li>
-        <li><b>Malar implants.</b> Cheekbone projection is already at the norm.</li>
+    <aside class="glance" aria-label="At a glance">
+      <ul class="cells cells-2x2">
+        <li><span class="cell-v"><span id="i-lm">90</span></span><span class="cell-k">landmarks</span></li>
+        <li><span class="cell-v"><span id="i-ms">165</span></span><span class="cell-k">measurements</span></li>
+        <li><span class="cell-v" data-bind="count:analyses" data-fmt="int">19</span><span class="cell-k">analyses</span></li>
+        <li><span class="cell-v">8–12<small>mm</small></span><span class="cell-k">jaw mismatch</span></li>
       </ul>
-    </div>
-    <div>
-      <h3>Before anything is fixed</h3>
-      <ul>
-        <li><b>Natural head position</b> — one profile photograph with a plumb line. The advance is right for ~4° chin-down; at a level Frankfort posture it should drop to 4.5–5 mm.</li>
-        <li><b>A scan after expansion</b> — whatever the expander actually drops and drifts the maxilla changes the Le Fort I by several millimetres; totals stay the same.</li>
-        <li><b>A sleep study</b> — moderate or severe sleep apnoea would favour a larger bimaxillary advance at the cost of the chin and incisor targets.</li>
-      </ul>
-      <p class="sub">Sequence: expansion (≈1 month active, 6 months retention) → orthodontics 9–14 months → one operation → orthodontics 6–9 months → stage-2 implants and nose 6–12 months later. About 2–2.5 years.</p>
+      <p class="glance-foot"><span class="dot" aria-hidden="true"></span>Follow-up scans planned</p>
+    </aside>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="viewer" class="sec viewer-sec" aria-labelledby="viewer-title">
+  <div class="wrap">
+    <div class="product on-dark">
+      <div class="product-bar">
+        <div>
+          <p class="product-kicker">3D skull</p>
+          <h2 id="viewer-title">Every landmark, in 3D.</h2>
+        </div>
+        <p class="howto"><span class="hw-wide"><kbd>Drag</kbd> to turn · <kbd>scroll</kbd> or <kbd>pinch</kbd> to zoom · <kbd>click</kbd> a label</span><span class="hw-phone"><kbd>Drag</kbd> to turn · <kbd>pinch</kbd> to zoom · <kbd>tap</kbd> a label</span></p>
+      </div>
+      <div class="viewer">
+        <div class="stage" id="stage">
+          <canvas id="c" aria-label="3D bone surface from the CBCT with clickable landmarks"></canvas>
+          <div class="hud" role="group" aria-label="Viewer controls">
+            <button type="button" id="b-spin" aria-pressed="true">Auto-rotate</button>
+            <button type="button" id="b-bone" aria-pressed="true">Bone labels</button>
+            <button type="button" id="b-soft" aria-pressed="true">Skin labels</button>
+            <button type="button" id="b-refs" aria-pressed="true">Lines</button>
+            <button type="button" id="b-xray" aria-pressed="false">X-ray</button>
+            <span class="hud-seg" role="group" aria-label="Camera view"><button type="button" id="b-front">Front</button><button type="button" id="b-side">Side</button><button type="button" id="b-three" aria-label="Three-quarter view">¾</button></span>
+          </div>
+          <div class="labels" id="labels"></div>
+          <div class="status" id="status">loading model…</div>
+        </div>
+        <div class="panel" id="panel">
+          <h3 class="p-head"><span id="p-title">Pick a landmark</span><span id="p-sub"></span></h3>
+          <p id="p-desc">Orange labels sit on bone, blue on skin.</p>
+          <div id="p-list"></div>
+        </div>
+      </div>
+      <div class="product-foot">
+        <ul class="legend" aria-label="Legend">
+          <li><i class="sw sw-bone" aria-hidden="true"></i>Bone landmark</li>
+          <li><i class="sw sw-soft" aria-hidden="true"></i>Skin landmark</li>
+          <li><i class="sw sw-ref" aria-hidden="true"></i>Reference verticals</li>
+          <li><i class="sw sw-plane" aria-hidden="true"></i>Planes and lines</li>
+          <li><i class="sw sw-sel" aria-hidden="true"></i>Selected</li>
+        </ul>
+        <p class="meta"><span id="meta-lm">90 landmarks</span> · <span id="meta-ms">165 measurements</span> · <span id="meta-mesh">model loading…</span></p>
+        <details class="more">
+          <summary>What the lines are<span class="pm" aria-hidden="true"></span></summary>
+          <div class="more-body"><p>Coordinates are mm from nasion in the Frankfort frame (lateral, superior, anterior). Blue verticals in the midline are the reference verticals: N-perp, bony glabella, soft glabella (= Andrews GALL here), FALL, and the Arnett true vertical through subnasale. Yellow: the FH plane, S–N, mandibular plane, occlusal plane and E-line. Green: the selected measurement.</p></div>
+        </details>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="height">
-  <div class="eyebrow">Closing the facial-height deficit</div>
-  <h2>Face height to the male mean; the ratio still reads broad</h2>
-  <p>A second round extended the simulator (lower-border osteotomies, vertical implants, lip and incisor-intrusion controls, parallel downgrade with the mandible following) and ran three height strategies through the same judges. The recommended stack, on top of the plan above: <b>vertical genioplasty 7.0 mm</b> (was 4.5), <b>anterior downgraft 4.0 mm</b> grafted (was 2.5) with 0.8 mm upper-incisor intrusion and 1.8 mm lower-incisor extrusion, posterior maxilla +0.5 mm instead of 1.0 mm impaction, bite seated at 2.5 mm overjet. No new implants, no ramus surgery.</p>
-  <div class="two">
-    <div class="tblwrap"><table id="segtable"></table></div>
-    <div class="tblwrap"><table id="laddertable"></table></div>
-  </div>
-  <div class="two">
-    <div>
-      <h3>Why it stops there</h3>
-      <ul>
-        <li><b>The missing height is above the jaws.</b> Midface (soft nasion to subnasale) and upper-lip length are the short segments; no jaw operation lengthens either, and the lip gains about 1 mm.</li>
-        <li><b>Lip seal is the binding limit.</b> Each extra millimetre of downgraft parts the lips about 0.6 mm; the stack sits at a 3.3 mm gap, borderline at the worst soft-tissue bound, settling to 2.4.</li>
-        <li><b>Tooth show is capped</b> at about 4 mm; more downgraft needs more intrusion than orthodontics delivers.</li>
-        <li><b>The chin is at its norm</b> at 7 mm; more makes it long.</li>
-        <li><b>The ramus cannot follow</b> a larger parallel downgraft without a 4 mm step or a stretched sling.</li>
-        <li>About a quarter of the gain is the lips parting rather than tissue, and every millimetre lands below the nose, so the upper-to-lower third ratio moves from 0.89 to 0.80.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>The index against several male norms</h3>
-      <div class="tblwrap"><table id="indextable"></table></div>
-      <p class="sub">Part of the gap is definition: measured from bony-nasion level the same face reads 88.7 at surgery. The rest is soft cheekbone width (144.8 mm), not height. Leanness (≈3 mm less soft width) would add ≈1.7 index points; zygomatic reduction was rejected because it narrows the cheekbones the plan keeps.</p>
+<section id="verdict" class="sec">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Diagnosis · skeletal Class III</p>
+      <h2 class="tt"><span id="h-verdict">An 8–12 mm jaw mismatch.</span> <span class="tt-sub">Narrow, mildly set-back upper jaw; normal lower jaw rotated forward; short, wide face.</span></h2>
+    </header>
+    <div class="tiles" id="tiles"></div>
+    <div class="more-list">
+      <details class="more" id="findings">
+        <summary>Technical findings (analysis shorthand)<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>Class III jaw discrepancy of 8–12 mm on a short, wide, horizontal-growth face: a mildly retrusive maxilla (1–4 mm in the Frankfort frame, 5–8 mm in a chin-down natural head position), a mandible of normal length rotated forward so that the chin sits 4–11 mm ahead of a balanced male, and a maxilla 10 mm too narrow.</p>
+          <ol id="headline"></ol>
+          <p class="src">The soft face height z (−3.9) in item 4 uses Arnett's norm; the Face height tile uses Farkas (z −1.3).</p>
+        </div>
+      </details>
     </div>
   </div>
 </section>
 
-<section id="expansion">
-  <div class="eyebrow">Maxillary expansion</div>
-  <h2>What 10 mm of expansion does on its own — and whether it can replace the Le Fort I</h2>
-  <div class="two">
-    <div>
-      <p><b>Screw opening is not bone.</b> Meta-analyses of bone-borne expanders in late adolescents and adults: the suture splits in ≈93 % of cases; the gain is ≈49 % basal bone, ≈8 % alveolar and ≈43 % tooth tipping, with a typical basal gain of 2.3 mm (1.7–3.0). Surgically assisted expansion in adults gives ≈7.5 mm at the molars with ≈3.5 mm skeletal and ≈30 % dental relapse. Ten millimetres of activation therefore puts roughly five into the basal bone; closing the full transverse deficit may need over-expansion and a second step.</p>
-      <p><b>What happens to the rest of the face depends on how far the maxilla drops and drifts while it widens.</b> With the mandible left to find its own bite, every millimetre of drop props the jaw open on the back teeth, swinging the chin down and back. That looks like progress — a longer face, a smaller Class III — but the front teeth stop meeting and the tongue base moves back. The airway limit here is 2 mm.</p>
-    </div>
-    <div class="tblwrap"><table id="exptable"></table></div>
-  </div>
-  <h3>Can expansion, with or without a facemask, remove the need for a Le Fort I?</h3>
-  <div class="tblwrap"><table id="nolftable"></table></div>
-  <p class="kicker"><b>Mostly no.</b> A typical response leaves the bite skeletally Class III with the front teeth apart. A strong response can close the bite on paper, but most of the correction comes from the mandible swinging 3.7–5 mm back — the move the airway rules out — with the midface forward 2–5 mm instead of 8 and 5+ mm of tooth showing once the incisors are uprighted. A large expander response shrinks the Le Fort I (to ≈4 mm advance with posterior impaction if it gives 4 mm down / 3 mm forward) rather than deleting it. Decide on the post-expansion scan and the sleep study.</p>
-</section>
-
-<section id="tables">
-  <div class="eyebrow">All measurements</div>
-  <h2 id="h-tables">Measurements against adult-male norms</h2>
-  <div class="search"><input type="search" id="q" placeholder="filter measurements (e.g. ramus, TVL, Wits)" aria-label="Filter measurements"><select id="an-sel"><option value="">all analyses</option></select><span class="sub" id="count"></span></div>
-  <p class="sub">z = (value − male norm) / SD. Rows without a valid SD show no z. Click a row to highlight its landmarks on the skull. McNamara linear norms carry ~8 % cephalometric magnification and those values are shown ×1.08; Jarabak linear norms are compared unscaled (magnification unknown), so their length z-scores read ~0.5–1 SD low.</p>
-  <div id="tablist"></div>
-</section>
-
-<section id="method">
-  <div class="eyebrow">Method and corrections</div>
-  <h2>How this version was produced, and what changed</h2>
-  <div class="two">
-    <div>
-      <h3>Pipeline</h3>
-      <ul>
-        <li>Volume: 668×668×445 voxels, 0.45 mm isotropic, HU-calibrated. Bone threshold 400 HU, skin −450 HU.</li>
-        <li>Landmarking: for each of four regions, two agents located every landmark independently — one by reading thin slices in three planes, one algorithmically from the volume — without access to any earlier result.</li>
-        <li>Verification: one adversarial agent per landmark re-rendered both candidates in three planes, re-derived the point from its definition, and chose or corrected it; each verifier's note records the disagreement between the two candidates and what structure the final point sits on.</li>
-        <li>Frame: Frankfort plane by least squares through both porions and orbitale (residuals ≤ 0.2 mm); midsagittal plane perpendicular to FH through nasion and sella.</li>
-        <li>Norms: adult-male means and SDs with sources (Steiner, McNamara, Ricketts, Holdaway, Jarabak/Björk, Tweed, Legan–Burstone, Arnett STCA, Farkas, Penn, Andrews). Where only pooled or range values exist, the table says so and gives no z.</li>
-        <li>Checks: two independent agents re-derived the frame, every coordinate and every headline number from the landmark voxels. Round 1 found eleven issues (occlusal-plane contact point, an alar landmark definition mismatch, unverifiable SDs for U1-NA/L1-NB and the Jarabak ratio, a missing Ricketts row, the Holdaway chin-thickness definition, the U1-to-A-vertical measuring point, the provisional facial axis, the facial-index classification, a yaw sign and an overbite sign in notes); all were corrected in round 2. A third pass checked this page against the analysis file.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Corrections versus the first version of this study</h3>
-      <ul>
-        <li><b>Arnett midface norms:</b> the first version compared the orbital rim, cheekbone and subpupil points with the <i>female</i> norms (−18.7, −20.6, −14.8). The male norms are −22.4, −25.2, −18.4. The "5–9 mm infraorbital deficit" shrinks to 2–3 mm at the rim (about 1 SD) and ~4 mm under the pupil (4.6 R / 3.9 L); the cheekbone point reads normal but sits 5 mm from the subpupil point on the same slope, so the honest summary is one infraorbital reading 1–2 SD behind.</li>
-        <li><b>Pogonion</b> was 2.8 mm too posterior; <b>nasion</b> is now on the frontonasal suture, 4.5 mm above the concavity point used before; <b>zygion</b> was on temporal bone (bony Zy–Zy 132.1, not 141); <b>overjet/overbite</b> are 0.6 / −0.6 (edge-to-edge), not 1.5 / 3.5; <b>chin pad</b> is 14–15 mm (normal), not 17; <b>nasolabial angle</b> ≈ 65° (range 59–73 by construction), not 97°.</li>
-        <li><b>Ramus:</b> Ar–Go 58 mm is +2.8 SD on Björk's norm — long, not "normal". <b>Gonial angle</b> Co-Go-Me 121°, not 117°; Ar-Go-Me 128° (norm 130 ± 6, normal).</li>
-        <li><b>Diagnosis</b> moves from "mandible normal, maxilla neutral" to an <b>8–12 mm Class III jaw discrepancy</b>: mildly retrusive maxilla (SNA 79.4, A −1.6 to N-perp, −10.9 to the GALL where a balanced male sits at −7 to −10), a mandible of normal length (Co–Gn 130 mm ×1.08 vs 134 ± 7) rotated forward by a horizontal growth pattern (FMA 14.5°, Björk sum 383°, S-Go:N-Me 73 %) so that the chin reads +11.8 mm to N-perp in the Frankfort frame, ≈ +4.8 mm at the scanned pitch, and +2.5 mm to the GALL where a balanced male sits at ≈ −9; brachyfacial; maxillary transverse deficiency; narrow airway. Whether the chin is called "prognathic" depends on the reference; on every reference with a norm it is 4–12 mm ahead, and the jaw discrepancy does not change.</li>
-        <li>Remaining low-confidence items: columella point (conf 0.5, ±2 mm along the columella, so the nasolabial angle is approximate), Pt point (facial axis provisional), antegonial notches (absent), left alar base (alare landmarked, Arnett norm not applied), thin bone (ANS, sella floor) not fully rendered in the 3D model.</li>
-      </ul>
+<section id="strengths" class="sec">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Strengths</p>
+      <h2 class="tt"><span>Already at the strong end.</span> <span class="tt-sub">Jaw, cheekbones, chin and symmetry meet or exceed the male norm.</span></h2>
+    </header>
+    <div class="tblwrap"><table id="strtable"></table></div>
+    <div class="more-list">
+      <details class="more">
+        <summary>Why these count<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>What is off is the front-middle: a maxilla that is narrow and a few millimetres back, a short upper lip and midface, and the bite. Three of these strengths (flat jaw plane, high posterior height ratio, forward chin) are one horizontal growth pattern; they read as strength once the front of the face has the height and projection to match them.</p>
+        </div>
+      </details>
     </div>
   </div>
-  <h3 style="margin-top:8px">What a completeness critic flagged, and what is still missing</h3>
-  <div class="two">
-    <ul>
-      <li><b>Framing.</b> "Retrusive maxilla" rests on SNA (which is depressed ~2° by the steep 8.8° SN–FH); the Frankfort- and Arnett-based maxillary rows are all within 1 SD. The maxillary deficit is mild; the chin's forward position is the larger component in the Frankfort frame and roughly equal in a chin-down NHP.</li>
-      <li><b>Landmark dependence.</b> Articular angle (z −4), Björk sum and Ar–Go depend on articulare (conf 0.6, left–right 4.7 mm apart); U1-SN/U1-FH and the whole incisor-uprighting estimate depend on U1 apex (5.7 mm disagreement); the nasolabial angle on the columella point (conf 0.5); the facial axis on an approximated Pt (conf 0.4); Me′ drives the soft-tissue heights and the facial index. The headline pattern (brachyfacial, Class III, proclined uppers) survives all of them; the exact z-scores do not.</li>
-      <li><b>Norm provenance.</b> Jarabak's linear norms are Björk's adolescent values, Arnett's heights carry cephalometric magnification, several Holdaway/Legan–Burstone "male" sets are secondary sources, and the subject's ancestry is not recorded. Face-height verdicts therefore range from "normal" (Jarabak) to "short" (Farkas, McNamara).</li>
-      <li><b>Occlusal plane.</b> The reverse-sloping occlusal plane (−5°) is mostly the 3.9° FH pitch; Wits varies −5.3 to −9.8 with the plane chosen. Class III on all variants.</li>
-      <li><b>Cheekbone′ / subpupil′</b> are two skin points 5 mm apart on one slope; treat them as one infraorbital reading (~1–2 SD behind), not as "cheek normal, subpupil retruded".</li>
+</section>
+
+<section id="gall" class="sec">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Profile line (Andrews' GALL)</p>
+      <h2 class="tt"><span>Where the upper jaw sits.</span> <span class="tt-sub"><span class="nowrap">1–4 mm</span> behind a balanced face; <span class="nowrap">5–8 mm</span> if the head tips chin-down.</span></h2>
+    </header>
+    <ul class="cells cells-3">
+      <li><span class="cell-v"><span data-bind="CEPH/keys/A_GALL" data-fmt="sgs"><span class="sgn">−</span>10.9</span><small>mm</small></span><span class="cell-k">Upper jaw (A point)</span></li>
+      <li><span class="cell-v"><span data-bind="CEPH/keys/U1FA_GALL" data-fmt="sgs"><span class="sgn">−</span>0.8</span><small>mm</small></span><span class="cell-k">Upper front tooth</span></li>
+      <li><span class="cell-v"><span data-bind="CEPH/reftable/Pog/Andrews GALL" data-fmt="sgs"><span class="sgn">+</span>2.5</span><small>mm</small></span><span class="cell-k">Chin</span></li>
     </ul>
-    <ul>
-      <li><b>Not run:</b> COGS hard-tissue analysis; Downs with norms; Ricketts Xi/Pm/corpus axis; molar and canine Class III in mm; dental midlines vs facial midline (both ~1–1.5 mm left); curve of Spee; lower-incisor decompensation in the advancement arithmetic (would add 2–3 mm of reverse overjet); clockwise-rotation modelling of the maxillomandibular complex (the natural plan for this pattern: retracts Pog and advances A at once); soft-tissue response to the advancement scenarios; genioplasty sizing; pharyngeal airway from this CBCT (70 mm² minimum area on the December 2025 scan is the working figure).</li>
-      <li><b>Given, not re-measured here:</b> the Penn transverse widths (59.0 / 64.5 mm) that carry the 10.5 mm expansion figure — from an earlier manual pass on the same volume.</li>
-      <li><b>Data requests:</b> a lateral photograph in natural head position with a plumb line (fixes the GALL numbers); a clinical decision on whether the 1.6° ear–orbit roll is posture or a real cant; dental models or an intraoral scan; the sleep study.</li>
+    <p class="caption">mm from the forehead line; + is in front.</p>
+    <div class="more-list">
+      <details class="more">
+        <summary>The rule<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>The Goal Anterior Limit Line is a true vertical in natural head position. It passes through the forehead's FFA point (the midpoint of the clinical forehead) when the forehead inclination is ≤ 7°; for every degree beyond 7° it moves 0.6 mm forward, but never beyond glabella. The FA point of the maxillary central incisor should sit on it.</p>
+          <p class="src">Andrews, Six Elements, Element II; sourced via Wu et al. 2023 and the Andrews 2008/2015 papers.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Applied here<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>Forehead inclination <span id="g-inc"></span>° (scanner vertical) / <span id="g-incfh"></span>° (Frankfort frame). The adjustment (<span id="g-adj"></span> mm) exceeds the FFA-to-glabella gap (<span id="g-gap"></span> mm), so the cap applies: <b>the GALL is the glabellar vertical</b>, <span id="g-ant"></span> mm anterior of nasion. The cap is reached at any inclination above 18°, so the GALL does not depend on the forehead being clipped by the field of view above <span id="g-sup"></span> mm (a trichion-based inclination of 25–29° would move it by at most ~1 mm).</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Why head posture matters<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body"><div id="g-note"></div></div>
+      </details>
+      <details class="more">
+        <summary>All reference distances<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body wide"><div class="tblwrap tblwrap--cap"><table id="reftable"></table></div></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="plan" class="sec sec--alt">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Movement plan <span class="tag-sim">Simulation</span></p>
+      <h2 class="tt"><span>Widen, advance and lengthen the upper jaw.</span> <span class="tt-sub">The lower jaw is not pushed back.</span></h2>
+    </header>
+    <ul class="cells cells-3 fromto">
+      <li><span class="cell-v"><s class="from"><span data-bind="PLAN/baseline/m/ANB" data-fmt="sgs"><span class="sgn">−</span>6.3</span>°</s><span class="arr" aria-hidden="true">→</span><span class="sr"> to </span><b><span data-bind="PLAN/base/m/ANB" data-fmt="sgs"><span class="sgn">+</span>2.3</span>°</b></span><span class="cell-k">Jaw relationship (ANB; norm 2°)</span></li>
+      <li><span class="cell-v"><s class="from"><span data-bind="PLAN/baseline/m/N_Me" data-fmt="f1">107.8</span></s><span class="arr" aria-hidden="true">→</span><span class="sr"> to </span><b><span data-bind="PLAN/base/m/N_Me" data-fmt="f1">114.5</span><small>mm</small></b></span><span class="cell-k">Face height (bone)</span></li>
+      <li><span class="cell-v"><s class="from"><span data-bind="PLAN/baseline/m/maxillary_basal_width" data-fmt="f1">59.0</span></s><span class="arr" aria-hidden="true">→</span><span class="sr"> to </span><b><span data-bind="PLAN/base/m/maxillary_basal_width" data-fmt="f1">69.0</span><small>mm</small></b></span><span class="cell-k">Upper-jaw width</span></li>
+    </ul>
+    <p class="caption">Simulated; assumes <span data-bind="PLAN/base_plan/expansion/skeletal_mm" data-fmt="int">10</span> mm of bone widening. ANB <span data-bind="PLAN/base_relapse/m/ANB" data-fmt="sg1">+0.8</span>° after relapse.</p>
+
+    <div class="block">
+      <h3 class="sub-h">The moves</h3>
+      <div class="tblwrap"><table id="movetable"></table></div>
+    </div>
+    <div class="block">
+      <h3 class="sub-h">Simulated result</h3>
+      <div class="tblwrap"><table id="outtable"></table></div>
+    </div>
+    <div class="block">
+      <div class="needed">
+        <p class="needed-k">Still needed</p>
+        <ul class="chips">
+          <li class="chip">Profile photo, natural posture</li>
+          <li class="chip">Scan after expansion</li>
+          <li class="chip">Sleep study</li>
+        </ul>
+      </div>
+    </div>
+    <div class="block">
+      <ol class="timeline">
+        <li><span class="tl-name">Expansion</span><span class="tl-dur">≈1 month active, 6 months retention</span></li>
+        <li><span class="tl-name">Orthodontics</span><span class="tl-dur">9–14 months</span></li>
+        <li><span class="tl-name">Jaw surgery</span></li>
+        <li><span class="tl-name">Orthodontics</span><span class="tl-dur">6–9 months</span></li>
+        <li><span class="tl-name">Stage 2: implants and nose</span><span class="tl-dur">6–12 months later</span></li>
+      </ol>
+      <p class="caption">About 2–2.5 years in total.</p>
+    </div>
+
+    <div class="more-list">
+      <details class="more">
+        <summary>How the plan was built<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>Built in a rigid-body surgical simulator on the landmarks above, after three competing plans (Andrews + airway, Arnett soft-tissue harmony, maximum vertical) were scored by an aesthetics judge and a stability/airway judge and merged; about 420 simulator runs, independently re-derived to 0.02 mm.</p>
+          <p>Constraints: the pharyngeal airway is small (70 mm² minimum cross-section), so the mandible may not move back more than 2 mm; natural head position was not recorded, so position-against-the-forehead numbers are given at 0°, 3.9° and 8° chin-down.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>7 rejected options<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>Mandibular setback.</b> To close the bite alone it takes B 5.7 mm and pogonion 5.1 mm back — over the airway limit — and leaves the midface flat and the face no longer.</li>
+            <li><b>Chin advancement.</b> The chin is already the most forward point of the face.</li>
+            <li><b>Le Fort II / III.</b> Over-projects the upper midface (orbital rim to +1.6–2.7 SD) with a 10 mm nasofrontal step; the rims are not truly deficient — a 3 mm onlay covers them.</li>
+            <li><b>High (quadrangular) Le Fort I.</b> Subpupil area overshoots; reported vertical relapse 62–158 %.</li>
+            <li><b>Rotation-only plans</b> (downgraft without advance). Chin 4–7 mm back, bite still Class III, airway worse.</li>
+            <li><b>Inverted-L ramus lengthening.</b> Flattens an already flat jaw plane on an already long ramus.</li>
+            <li><b>Malar implants.</b> Cheekbone projection is already at the norm.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Why each check matters<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>Natural head position</b> — one profile photograph with a plumb line. The advance is right for ~4° chin-down; at a level Frankfort posture it should drop to 4.5–5 mm.</li>
+            <li><b>A scan after expansion</b> — whatever the expander actually drops and drifts the maxilla changes the Le Fort I by several millimetres; totals stay the same.</li>
+            <li><b>A sleep study</b> — moderate or severe sleep apnoea would favour a larger bimaxillary advance at the cost of the chin and incisor targets.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="height" class="sec sec--alt">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Facial height <span class="tag-sim">Simulation</span></p>
+      <h2 class="tt"><span>Face height reaches the male norm.</span> <span class="tt-sub">From <span data-bind="PLAN/height_table/baseline/sNMe" data-fmt="f1">112.2</span> to <span data-bind="PLAN/height_table/stack/sNMe" data-fmt="f1">122.3</span> mm, <span data-bind="PLAN/height_table/stack_relapse/sNMe" data-fmt="f1">120.7</span> after relapse. Norm: 121.3. The face stays broad.</span></h2>
+    </header>
+    <div class="split">
+      <div>
+        <h3 class="sub-h">By segment</h3>
+        <div class="tblwrap"><table id="segtable"></table></div>
+      </div>
+      <div>
+        <h3 class="sub-h">What each step adds</h3>
+        <div class="tblwrap"><table id="laddertable"></table></div>
+      </div>
+    </div>
+    <div class="more-list">
+      <details class="more">
+        <summary>The extra height steps<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>A second round extended the simulator (lower-border osteotomies, vertical implants, lip and incisor-intrusion controls, parallel downgrade with the mandible following) and ran three height strategies through the same judges. The recommended extra height steps, on top of the plan above: <b>vertical genioplasty 7.0 mm</b> (was 4.5), <b>anterior downgraft 4.0 mm</b> grafted (was 2.5) with 0.8 mm upper-incisor intrusion and 1.8 mm lower-incisor extrusion, posterior maxilla +0.5 mm instead of 1.0 mm impaction, bite seated at 2.5 mm overjet. No new implants, no ramus surgery.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Why it stops there<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>The missing height is above the jaws.</b> Midface (soft nasion to subnasale) and upper-lip length are the short segments; no jaw operation lengthens either, and the lip gains about 1 mm.</li>
+            <li><b>Lip seal is the binding limit.</b> Each extra millimetre of downgraft parts the lips about 0.6 mm; with the extra steps the gap is 3.3 mm, borderline at the worst soft-tissue bound, settling to 2.4.</li>
+            <li><b>Tooth show is capped</b> at about 4 mm; more downgraft needs more intrusion than orthodontics delivers.</li>
+            <li><b>The chin is at its norm</b> at 7 mm; more makes it long.</li>
+            <li><b>The ramus cannot follow</b> a larger parallel downgraft without a 4 mm step or a stretched sling.</li>
+            <li>About a quarter of the gain is the lips parting rather than tissue, and every millimetre lands below the nose, so the upper-to-lower third ratio moves from 0.89 to 0.80.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Face shape vs six norms<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body wide">
+          <div class="tblwrap"><table id="indextable"></table></div>
+          <p class="src">Part of the gap is definition: measured from bony-nasion level the same face reads 88.7 at surgery. The rest is soft cheekbone width (144.8 mm), not height. Leanness (≈3 mm less soft width) would add ≈1.7 index points; zygomatic reduction was rejected because it narrows the cheekbones the plan keeps.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="expansion" class="sec sec--alt">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Expansion <span class="tag-sim">Simulation</span></p>
+      <h2 class="tt"><span>What 10 mm of expansion does.</span> <span class="tt-sub">About half widens the bone; the rest mostly tips the teeth.</span></h2>
+    </header>
+    <ul class="cells cells-3">
+      <li><span class="cell-v">≈93%</span><span class="cell-k">suture opens</span></li>
+      <li><span class="cell-v">≈5<small>mm</small></span><span class="cell-k">bone from 10 mm of screw</span></li>
+      <li><span class="cell-v">≈43%</span><span class="cell-k">of the gain is teeth tipping</span></li>
+    </ul>
+    <p class="caption">Published averages for adults, not this patient's result.</p>
+    <div class="block">
+      <div class="tblwrap"><table id="exptable"></table></div>
+    </div>
+    <div class="block">
+      <h3 class="sub-h">Can expansion replace jaw surgery?</h3>
+      <p class="answer"><strong>Mostly no.</strong> It can shrink the upper-jaw surgery to about a 4 mm advance, not remove it.</p>
+      <div class="tblwrap"><table id="nolftable"></table></div>
+    </div>
+    <div class="more-list">
+      <details class="more">
+        <summary>Screw opening is not bone<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>Meta-analyses of bone-borne expanders in late adolescents and adults: the suture splits in ≈93 % of cases; the gain is ≈49 % basal bone, ≈8 % alveolar and ≈43 % tooth tipping, with a typical basal gain of 2.3 mm (1.7–3.0). Surgically assisted expansion in adults gives ≈7.5 mm at the molars with ≈3.5 mm skeletal and ≈30 % dental relapse. Ten millimetres of activation therefore puts roughly five into the basal bone; closing the full transverse deficit may need over-expansion and a second step.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>What the drop does to the face<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>What happens to the rest of the face depends on how far the maxilla drops and drifts while it widens. With the mandible left to find its own bite, every millimetre of drop props the jaw open on the back teeth, swinging the chin down and back. That looks like progress — a longer face, a smaller Class III — but the front teeth stop meeting and the tongue base moves back. The airway limit here is 2 mm.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>The full answer<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p><b>Mostly no.</b> A typical response leaves the bite skeletally Class III with the front teeth apart. A strong response can close the bite on paper, but most of the correction comes from the mandible swinging 3.7–5 mm back — the move the airway rules out — with the midface forward 2–5 mm instead of 8 and 5+ mm of tooth showing once the incisors are uprighted. A large expander response shrinks the Le Fort I (to ≈4 mm advance with posterior impaction if it gives 4 mm down / 3 mm forward) rather than deleting it. Decide on the post-expansion scan and the sleep study.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="sec band-dark on-dark" aria-labelledby="sandbox-title">
+  <i class="iso-bg" aria-hidden="true"></i>
+  <div class="wrap sb-grid">
+    <div class="sb-text">
+      <p class="kicker">Surgery sandbox</p>
+      <h2 id="sandbox-title" class="tt"><span>Move the bones yourself.</span> <span class="tt-sub">Drag the jaws, chin and teeth; the numbers, bite and airway check update.</span></h2>
+      <a class="btn btn--primary" href="sandbox/">Open the sandbox<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <ul class="cells sb-cells">
+      <li><span class="cell-v">37</span><span class="cell-k">pieces</span></li>
+      <li><span class="cell-v">28</span><span class="cell-k">teeth</span></li>
+      <li><span class="cell-v">5</span><span class="cell-k">guided missions</span></li>
     </ul>
   </div>
-  <div class="callout"><b>Scope.</b> Geometry only. This is not a radiological report and the scan was not read for pathology. Norms are population means; treatment decisions belong to the surgeon and orthodontist with models, photographs, a sleep study and the patient in the room.</div>
 </section>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<section id="method" class="sec">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Method</p>
+      <h2 class="tt"><span>How it was made.</span> <span class="tt-sub">Two agents placed each landmark, a third checked it, and every number was recomputed.</span></h2>
+    </header>
+    <ul class="cells cells-3">
+      <li><span class="cell-v">0.45<small>mm</small></span><span class="cell-k">scan resolution</span></li>
+      <li><span class="cell-v"><span data-bind="CEPH/frame/fit_rms" data-fmt="f2">0.16</span><small>mm</small></span><span class="cell-k">head-frame fit error</span></li>
+      <li><span class="cell-v">≈420</span><span class="cell-k">surgery simulations</span></li>
+    </ul>
+    <p class="callout"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.8" r=".9" fill="currentColor"/></svg><span>Geometry only: not a radiological report, and the scan was not read for pathology. Treatment decisions belong to the surgeon and orthodontist.</span></p>
+    <div class="more-list">
+      <details class="more">
+        <summary>Scan and frame<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li>Scanner: Planmeca Viso G7.</li>
+            <li>Volume: 668×668×445 voxels, 0.45 mm isotropic, HU-calibrated.</li>
+            <li>Thresholds: bone 400 HU, skin −450 HU.</li>
+            <li>Frankfort plane fit residual 0.16 mm.</li>
+            <li>Scanner pitch 3.9° chin-down against FH; roll 1.6°.</li>
+            <li>3D model: 1.35 mm grid, 320 HU iso-surface; bone only, thin bone (ANS, sella floor) partly missing.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Pipeline<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>Full re-landmarking of one head CBCT by independent agents (two landmarkers per region, one adversarial verifier per landmark, sourced adult-male norms, two adversarial re-derivations of every number).</p>
+          <ul>
+            <li>Landmarking: for each of four regions, two agents located every landmark independently — one by reading thin slices in three planes, one algorithmically from the volume — without access to any earlier result.</li>
+            <li>Verification: one adversarial agent per landmark re-rendered both candidates in three planes, re-derived the point from its definition, and chose or corrected it; each verifier's note records the disagreement between the two candidates and what structure the final point sits on.</li>
+            <li>Frame: Frankfort plane by least squares through both porions and orbitale (residuals ≤ 0.2 mm); midsagittal plane perpendicular to FH through nasion and sella.</li>
+            <li>Norms: adult-male means and SDs with sources (Steiner, McNamara, Ricketts, Holdaway, Jarabak/Björk, Tweed, Legan–Burstone, Arnett STCA, Farkas, Penn, Andrews). Where only pooled or range values exist, the table says so and gives no z.</li>
+            <li>Checks: two independent agents re-derived the frame, every coordinate and every headline number from the landmark voxels. Round 1 found eleven issues (occlusal-plane contact point, an alar landmark definition mismatch, unverifiable SDs for U1-NA/L1-NB and the Jarabak ratio, a missing Ricketts row, the Holdaway chin-thickness definition, the U1-to-A-vertical measuring point, the provisional facial axis, the facial-index classification, a yaw sign and an overbite sign in notes); all were corrected in round 2. A third pass checked the first published page against the analysis file.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="more">
+        <summary>What changed since version 1<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>Arnett midface norms:</b> the first version compared the orbital rim, cheekbone and subpupil points with the <i>female</i> norms (−18.7, −20.6, −14.8). The male norms are −22.4, −25.2, −18.4. The "5–9 mm infraorbital deficit" shrinks to 2–3 mm at the rim (about 1 SD) and ~4 mm under the pupil (4.6 R / 3.9 L); the cheekbone point reads normal but sits 5 mm from the subpupil point on the same slope, so the honest summary is one infraorbital reading 1–2 SD behind.</li>
+            <li><b>Pogonion</b> was 2.8 mm too posterior; <b>nasion</b> is now on the frontonasal suture, 4.5 mm above the concavity point used before; <b>zygion</b> was on temporal bone (bony Zy–Zy 132.1, not 141); <b>overjet/overbite</b> are 0.6 / −0.6 (edge-to-edge), not 1.5 / 3.5; <b>chin pad</b> is 14–15 mm (normal), not 17; <b>nasolabial angle</b> ≈ 65° (range 59–73 by construction), not 97°.</li>
+            <li><b>Ramus:</b> Ar–Go 58 mm is +2.8 SD on Björk's norm — long, not "normal". <b>Gonial angle</b> Co-Go-Me 121°, not 117°; Ar-Go-Me 128° (norm 130 ± 6, normal).</li>
+            <li><b>Diagnosis</b> moves from "mandible normal, maxilla neutral" to an <b>8–12 mm Class III jaw discrepancy</b>: mildly retrusive maxilla (SNA 79.4, A −1.6 to N-perp, −10.9 to the GALL where a balanced male sits at −7 to −10), a mandible of normal length (Co–Gn 130 mm ×1.08 vs 134 ± 7) rotated forward by a horizontal growth pattern (FMA 14.5°, Björk sum 383°, S-Go:N-Me 73 %) so that the chin reads +11.8 mm to N-perp in the Frankfort frame, ≈ +4.8 mm at the scanned pitch, and +2.5 mm to the GALL where a balanced male sits at ≈ −9; brachyfacial; maxillary transverse deficiency; narrow airway. Whether the chin is called "prognathic" depends on the reference; on every reference with a norm it is 4–12 mm ahead, and the jaw discrepancy does not change.</li>
+            <li>Remaining low-confidence items: columella point (conf 0.5, ±2 mm along the columella, so the nasolabial angle is approximate), Pt point (facial axis provisional), antegonial notches (absent), left alar base (alare landmarked, Arnett norm not applied), thin bone (ANS, sella floor) not fully rendered in the 3D model.</li>
+          </ul>
+          <p>This version supersedes the first study, which contained the landmark and norm errors listed above.</p>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Known weak points<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>Framing.</b> "Retrusive maxilla" rests on SNA (which is depressed ~2° by the steep 8.8° SN–FH); the Frankfort- and Arnett-based maxillary rows are all within 1 SD. The maxillary deficit is mild; the chin's forward position is the larger component in the Frankfort frame and roughly equal in a chin-down NHP.</li>
+            <li><b>Landmark dependence.</b> Articular angle (z −4), Björk sum and Ar–Go depend on articulare (conf 0.6, left–right 4.7 mm apart); U1-SN/U1-FH and the whole incisor-uprighting estimate depend on U1 apex (5.7 mm disagreement); the nasolabial angle on the columella point (conf 0.5); the facial axis on an approximated Pt (conf 0.4); Me′ drives the soft-tissue heights and the facial index. The headline pattern (brachyfacial, Class III, proclined uppers) survives all of them; the exact z-scores do not.</li>
+            <li><b>Norm provenance.</b> Jarabak's linear norms are Björk's adolescent values, Arnett's heights carry cephalometric magnification, several Holdaway/Legan–Burstone "male" sets are secondary sources, and the subject's ancestry is not recorded. Face-height verdicts therefore range from "normal" (Jarabak) to "short" (Farkas, McNamara).</li>
+            <li><b>Occlusal plane.</b> The reverse-sloping occlusal plane (−5°) is mostly the 3.9° FH pitch; Wits varies −5.3 to −9.8 with the plane chosen. Class III on all variants.</li>
+            <li><b>Cheekbone′ / subpupil′</b> are two skin points 5 mm apart on one slope; treat them as one infraorbital reading (~1–2 SD behind), not as "cheek normal, subpupil retruded".</li>
+          </ul>
+        </div>
+      </details>
+      <details class="more">
+        <summary>Still to do<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <ul>
+            <li><b>Not run:</b> COGS hard-tissue analysis; Downs with norms; Ricketts Xi/Pm/corpus axis; molar and canine Class III in mm; dental midlines vs facial midline (both ~1–1.5 mm left); curve of Spee; lower-incisor decompensation in the advancement arithmetic (would add 2–3 mm of reverse overjet); clockwise-rotation modelling of the maxillomandibular complex (the natural plan for this pattern: retracts Pog and advances A at once); soft-tissue response to the advancement scenarios; genioplasty sizing; pharyngeal airway from this CBCT (working figure: 70 mm² minimum area, from an earlier December 2025 measurement).</li>
+            <li><b>Given, not re-measured here:</b> the Penn transverse widths (59.0 / 64.5 mm) that carry the 10.5 mm expansion figure — from an earlier manual pass on the same volume.</li>
+            <li><b>Data requests:</b> a lateral photograph in natural head position with a plumb line (fixes the GALL numbers); a clinical decision on whether the 1.6° ear–orbit roll is posture or a real cant; dental models or an intraoral scan; the sleep study.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="tables" class="sec">
+  <div class="wrap">
+    <header class="sec-head">
+      <p class="kicker">Data</p>
+      <h2 class="tt"><span id="h-tables">Every measurement.</span> <span class="tt-sub">Search <span data-bind="count:measurements" data-fmt="int">165</span> measurements, or click a row to see it on the skull.</span></h2>
+    </header>
+    <div class="more-list more-list--top">
+      <details class="more">
+        <summary>How to read z<span class="pm" aria-hidden="true"></span></summary>
+        <div class="more-body">
+          <p>z = (value − male norm) / SD. Rows without a valid SD show no z. Click a row to highlight its landmarks on the skull. McNamara linear norms carry ~8 % cephalometric magnification and those values are shown ×1.08; Jarabak linear norms are compared unscaled (magnification unknown), so their length z-scores read ~0.5–1 SD low.</p>
+        </div>
+      </details>
+    </div>
+    <div class="toolbar">
+      <div class="tb-row">
+        <label class="search-field"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="search" id="q" placeholder="Filter, e.g. ramus, TVL, Wits" aria-label="Filter measurements" autocomplete="off" spellcheck="false"></label>
+        <select id="an-sel" aria-label="Filter by analysis"><option value="">All analyses</option></select>
+        <span id="count" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="chip-row" id="an-chips"></div>
+    <div id="tablist"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <a class="brand" href="#top"><svg class="mark" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="6.5"/><path d="M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4"/></g><circle cx="10" cy="10" r="1.6" fill="currentColor"/></svg><span>CBCT Ceph Atlas</span></a>
+      <p>Baseline scan. Follow-up scans planned.</p>
+    </div>
+    <p class="foot-notice">Released openly by the person scanned. Bone and measurements only: no name, birth date, record numbers or face photos. Treatment sections are simulations, not medical advice.</p>
+    <div class="foot-links">
+      <p>Code MIT · Data CC BY 4.0</p>
+      <p>Attribution: CBCT Ceph Atlas</p>
+      <p><a class="tlink" href="sandbox/">Surgery sandbox<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a></p>
+      <p><a class="tlink" href="#top">Back to top<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a></p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Script D: page chrome. Theme button, nav state over the hero field, mobile menu,
+   gradient pause, keyboard activation of generated rows. Runs before the 7 MB mesh. */
+(function(){
+  var root=document.documentElement, nav=document.querySelector('.nav');
+  /* theme: auto -> the opposite of the system theme -> the other theme -> auto */
+  var tb=document.getElementById('theme-btn'), mq=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+  function mode(){ var t=root.getAttribute('data-theme'); return t==='light'||t==='dark'?t:'auto'; }
+  function label(m){ tb.setAttribute('aria-label','Theme: '+m); tb.setAttribute('title','Theme: '+m); tb.setAttribute('data-mode',m); }
+  function next(m){ var first=(mq&&mq.matches)?'light':'dark', second=first==='light'?'dark':'light'; return m==='auto'?first:(m===first?second:'auto'); }
+  if(tb){
+    label(mode());
+    tb.addEventListener('click',function(){
+      var m=next(mode());
+      if(m==='auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',m);
+      try{ if(m==='auto') localStorage.removeItem('atlas-theme'); else localStorage.setItem('atlas-theme',m); }catch(e){}
+      label(m);
+    });
+  }
+  /* nav: transparent while the hero text is under the bar. The markup ships data-over-band (the page
+     loads at the top); one observer whose root reaches far below the viewport flips the state on every
+     crossing of the nav line, anchor jumps included, without a scroll listener. */
+  var sent=document.getElementById('hero-sentinel'), navH=nav?nav.offsetHeight:64, io=null;
+  function setOver(on){ if(nav) nav.toggleAttribute('data-over-band',on); }
+  function watchSentinel(){
+    if(!nav||!sent) return;
+    if(!('IntersectionObserver' in window)){ setOver(false); return; }
+    if(io) io.disconnect();
+    io=new IntersectionObserver(function(es){ var e=es[es.length-1]; setOver(e.isIntersecting&&e.boundingClientRect.top>navH); },{rootMargin:'-'+navH+'px 0px 100000px 0px'});
+    io.observe(sent);
+  }
+  if(nav&&sent) setOver(sent.getBoundingClientRect().top>navH);
+  watchSentinel();
+  addEventListener('resize',function(){ var h=nav?nav.offsetHeight:navH; if(h!==navH){ navH=h; watchSentinel(); } });
+  /* nav colour transitions start only after load, so a blocked main thread never shows a half-faded bar */
+  function navReady(){ setTimeout(function(){ if(nav) nav.classList.add('is-ready'); },60); }
+  if(document.readyState==='complete') navReady(); else addEventListener('load',navReady);
+  /* mobile menu: close on link, Escape, outside click */
+  var menu=document.querySelector('.nav-menu');
+  if(menu){
+    var sum=menu.querySelector('summary');
+    menu.addEventListener('click',function(e){ if(e.target.closest('a')) menu.open=false; });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&menu.open){ menu.open=false; sum.focus(); } });
+    document.addEventListener('click',function(e){ if(menu.open&&!menu.contains(e.target)) menu.open=false; });
+  }
+  /* gradient: runs only while the hero fills at least 40% of the viewport; paused in hidden tabs
+     and while the skull is dragged */
+  var band=document.querySelector('.band'), hero=document.querySelector('.hero'), heroOn=true, drag=false;
+  function bandState(){ if(band) band.classList.toggle('is-paused', !heroOn||document.hidden||drag); }
+  if('IntersectionObserver' in window&&hero){
+    var th=[]; for(var i=0;i<=20;i++) th.push(i/20);
+    new IntersectionObserver(function(es){ var e=es[es.length-1], vh=(e.rootBounds&&e.rootBounds.height)||innerHeight;
+      heroOn=e.isIntersecting&&e.intersectionRect.height>=.4*vh; bandState(); },{threshold:th}).observe(hero);
+  }
+  document.addEventListener('visibilitychange',bandState);
+  var stg=document.getElementById('stage');
+  if(stg){
+    stg.addEventListener('pointerdown',function(){ drag=true; bandState(); });
+    var up=function(){ if(drag){ drag=false; bandState(); } };
+    addEventListener('pointerup',up); addEventListener('pointercancel',up);
+  }
+  /* generated rows. Enter / Space activates a table row or a panel row. Script C rebuilds #p-list on
+     every selection, so focus moves to the rebuilt row (panel) or to the panel (table), and the single
+     row left after drawing a measurement is marked aria-current. */
+  function panelRow(key){ var l=document.getElementById('p-list'); if(!l) return null; var r=l.querySelectorAll('.mrow'); for(var i=0;i<r.length;i++){ if(r[i].getAttribute('data-key')===key) return r[i]; } return null; }
+  function markCurrent(key){ var l=document.getElementById('p-list'), n=panelRow(key); if(n&&l.children.length===1) n.setAttribute('aria-current','true'); return n; }
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    var t=e.target;
+    if(!(t&&t.matches&&t.matches('tr[data-key], .mrow'))) return;
+    e.preventDefault();
+    var key=t.getAttribute('data-key'), isRow=t.matches('tr[data-key]');
+    t.click();
+    if(isRow){ var p=document.getElementById('panel'); if(p){ p.setAttribute('tabindex','-1'); p.focus({preventScroll:true}); } }
+    else if(!t.isConnected){ var n=panelRow(key); if(n) n.focus({preventScroll:true}); }
+  });
+  document.addEventListener('click',function(e){
+    var r=e.target&&e.target.closest?e.target.closest('tr[data-key], .mrow'):null;
+    if(r) markCurrent(r.getAttribute('data-key'));
+  });
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 /* Minimal orbit control (drag = orbit, wheel/pinch = zoom, right-drag/two-finger = pan), no external dependency. */
 window.SimpleOrbit=function(camera,el){
@@ -344,55 +1308,55 @@ window.SimpleOrbit=function(camera,el){
 (function(){
   const P=window.PLAN, D=window.CEPH; if(!P||!D) return;
   const $=id=>document.getElementById(id);
-  const f1=x=>{ if(x==null||Number.isNaN(x)) return '—'; const v=+(+x).toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1); };
-  const sg=x=>{ if(x==null) return '—'; const v=+(+x).toFixed(1); return (v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1); };
+  const f1=x=>{ if(x==null||Number.isNaN(x)) return '—'; const v=+(+x).toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1).replace('-','−'); };
+  const sg=x=>{ if(x==null) return '—'; const v=+(+x).toFixed(1); return ((v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1)).replace('-','−'); };
   const row=k=>D.measurements.find(m=>m.key===k)||{};
   const T=(id,head,rows)=>{ $(id).innerHTML='<thead><tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((c,i)=>{ const o=(typeof c==='object'&&c)?c:{t:c}; return `<td class="${o.cls||(i>0?'num':'')}">${o.t}</td>`;}).join('')+'</tr>').join('')+'</tbody>'; };
 
   /* strengths */
-  const st=[['Ramus height (Ar–Go)','Jarabak|Ar-Go ramus height','mm','long ramus, the most "jaw" trait there is (norm is adolescent; read as long, not as a z)'],
+  const st=[['Ramus height (Ar–Go)','Jarabak|Ar-Go ramus height','mm','long ramus (adolescent norm: read "long", not the z)'],
     ['Posterior : anterior face height','Jarabak|S-Go/N-Me ratio','%','deep, heavy back of the jaw'],
     ['Mandibular plane to FH','McNamara|FMA (FH to Go-Me)','°','flat jawline; no downward-sloping border'],
-    ['Cheekbone width (soft)','Farkas|Bizygomatic width zy-zy (soft tissue)','mm','wide zygomas'],
+    ['Cheekbone width (soft)','Farkas|Bizygomatic width zy-zy (soft tissue)','mm','wide cheekbones'],
     ["Cheekbone projection (R)","Arnett TVL|Cheekbone' R to TVL",'mm','on the norm — not flat'],
-    ['Chin to N-perpendicular (×1.08)','McNamara|Pog to N-perpendicular','mm','never needs a chin implant'],
-    ['Mandibular length (Co–Gn, ×1.08)','McNamara|Co-Gn effective mandibular length','mm','full-size mandible'],
+    ['Chin to N-perpendicular (×1.08)','McNamara|Pog to N-perpendicular','mm','chin already well forward'],
+    ['Mandibular length (Co–Gn, ×1.08)','McNamara|Co-Gn effective mandibular length','mm','normal-length lower jaw'],
     ['Gonial angle Ar-Go-Me','Jarabak|Gonial angle Ar-Go-Me','°','normal'],
-    ['Gonial angle Co-Go-Me','Jarabak|Gonial angle Co-Go-Me','°','square end, symmetric'],
+    ['Gonial angle Co-Go-Me','Jarabak|Gonial angle Co-Go-Me','°','square, symmetric angle'],
     ["Chin soft tissue (Pog–Pog′)","Arnett thickness|Chin thickness Pog-Pog'",'mm','normal thickness; bone shows through']];
-  T('strtable',['Trait','Value','Male norm','z','Read'],st.map(([n,k,u,read])=>{ const m=Object.assign({},row(k)); if(k==='Jarabak|S-Go/N-Me ratio'){ m.sd=null; m.z=null; m.norm=null; m.note='range 62–65 %'; } return [n,f1(m.value)+' '+u, m.norm==null?(m.note&&m.note.match(/range[^;,.]*/)?m.note.match(/range[^;,.]*/)[0]:'—'):f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''), m.z==null?'—':sg(m.z), {t:read,cls:''}]; }).concat([['Skeletal symmetry','bony chin 0.4 mm off midline','< 2–3 mm','—',{t:'condyles and gonia within ~2.5 mm; no surgical asymmetry',cls:''}],['TMJs','seated, ≈2 mm joint space','—','—',{t:'healthy joints — the foundation every jaw plan depends on',cls:''}]]));
+  T('strtable',['Trait','Value','Male norm','z','Read'],st.map(([n,k,u,read])=>{ const m=Object.assign({},row(k)); if(k==='Jarabak|S-Go/N-Me ratio'){ m.sd=null; m.z=null; m.norm=null; m.note='range 62–65 %'; } return [n,f1(m.value)+'\u00a0'+u, m.norm==null?(m.note&&m.note.match(/range[^;,.]*/)?m.note.match(/range[^;,.]*/)[0]:'—'):f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''), m.z==null?'—':sg(m.z), {t:read,cls:''}]; }).concat([['Skeletal symmetry','bony chin 0.4 mm off midline','< 2–3 mm','—',{t:'condyles and jaw angles within ~2.5 mm',cls:''}],['TMJs','seated, ≈2 mm joint space','—','—',{t:'condyles seated; not a clinical read',cls:''}]]));
 
   /* movement table */
   const bp=P.base_plan, b=P.base, B0=P.baseline;
   T('movetable',['#','Structure','Movement','Net from today','How it is held'],[
-    ['1',{t:'Maxilla, width',cls:''},{t:`Bone-borne expansion +${bp.expansion.skeletal_mm} mm skeletal (planned side effects ${bp.expansion.drop_mm} mm down, ${bp.expansion.forward_mm} mm forward)`,cls:''},{t:`basal width ${f1(B0.m.maxillary_basal_width)} → ${f1(b.m.maxillary_basal_width)} mm`,cls:'num'},{t:'≈2 mm over-expansion, 6 months passive; SARPE if the suture does not split',cls:''}],
+    ['1',{t:'Maxilla, width',cls:''},{t:`Bone-borne expansion +${bp.expansion.skeletal_mm} mm skeletal (planned side effects ${bp.expansion.drop_mm} mm down, ${bp.expansion.forward_mm} mm forward)`,cls:''},{t:`basal width ${f1(B0.m.maxillary_basal_width)} → ${f1(b.m.maxillary_basal_width)} mm`,cls:'num'},{t:'≈2 mm over-expansion, 6 months passive; surgical expansion (SARPE) if the suture does not split',cls:''}],
     ['2',{t:'Upper incisors',cls:''},{t:`Upright U1–FH ${f1(B0.m.U1_FH)}° → ${bp.decompensation.u1_fh_target_deg}°`,cls:''},{t:'edge ≈3 mm back; unmasks the reverse overjet',cls:''},{t:'orthodontics',cls:''}],
     ['3',{t:'Lower incisors',cls:''},{t:`IMPA ${f1(B0.m.IMPA)}° → ${bp.decompensation.l1_impa_target_deg}°`,cls:''},{t:'edge ≈1 mm forward',cls:''},{t:'orthodontics, bonded retainer',cls:''}],
     ['4',{t:'<b>Le Fort I</b>, standard level',cls:''},{t:`Advance ${bp.maxilla.adv_mm} mm at the incisor edge; ${bp.maxilla.ant_vertical_mm} mm anterior downgraft; ${Math.abs(bp.maxilla.post_vertical_mm)} mm posterior impaction (clockwise pitch)`,cls:''},{t:`A point ${sg(b.A[0])} forward, ${f1(-b.A[1])} down`,cls:'num'},{t:'plates + interpositional graft, ≈1 mm overcorrection',cls:''}],
     ['5',{t:'Mandible, BSSO',cls:''},{t:`Seated to the bite (overjet ${bp.targets.overjet_mm}, overbite ${bp.targets.overbite_mm}); no setback`,cls:''},{t:`B ${sg(b.B[0])} AP, ${f1(-b.B[1])} down`,cls:'num'},{t:'plates or bicortical screws',cls:''}],
-    ['6',{t:'Chin',cls:''},{t:`Vertical lengthening ${bp.genioplasty.vertical_mm} mm, 0 mm front-to-back (${P.stack_plan.genioplasty.vertical_mm} mm in the height stack)`,cls:''},{t:`pogonion ${sg(b.Pog[0])} AP, ${f1(-b.Pog[1])} down`,cls:'num'},{t:'interpositional graft + plate',cls:''}],
+    ['6',{t:'Chin',cls:''},{t:`Vertical lengthening ${bp.genioplasty.vertical_mm} mm, 0 mm front-to-back (${P.stack_plan.genioplasty.vertical_mm} mm with the extra height steps)`,cls:''},{t:`pogonion ${sg(b.Pog[0])} AP, ${f1(-b.Pog[1])} down`,cls:'num'},{t:'interpositional graft + plate',cls:''}],
     ['7',{t:'Stage 2',cls:''},{t:`Infraorbital onlay ${bp.adjuncts.infraorbital_implant_mm} mm; angle implants ${bp.adjuncts.angle_implant_lateral_mm_per_side} mm lateral + ${bp.adjuncts.angle_implant_vertical_mm} mm down per side; nasal tip +${bp.adjuncts.rhinoplasty_tip_mm} mm`,cls:''},{t:'soft jaw width '+f1(B0.m.bigonial_soft_est)+' → '+f1(b.m.bigonial_soft_est)+' mm',cls:'num'},{t:'patient-specific implants; cartilage graft',cls:''}],
   ]);
   /* outcomes */
   const O=[['ANB (°)','ANB','2'],['Overjet / overbite (mm)',null,'≈3 / 3'],['A to N-perp (mm)','A_to_Nperp','0–1'],['Pog to N-perp (mm)','Pog_to_Nperp','−0.3 ± 3.8'],['Profile angle G′–Sn–Pog′ (°)','Arnett_facial_angle','169 ± 3'],['Face height N–Me (mm)','N_Me','—'],['Soft face height N′–Me′ (mm)',"soft_N'_Me'_3D",'121 ± 7'],['Facial index (soft)','facial_index_soft','88.5 ± 5'],['Incisor display at rest (mm)','incisor_display_Sto_U1tip','2–4'],['Jaw width, % of cheekbone width','bigonial_to_bizygomatic_soft_pct','—'],['Maxilla − mandible basal width (mm)','Penn_differential_Mx_minus_Md','0 to +5'],['FMA (°), true / jaw contour',null,'21–25']];
   const cols=[P.baseline,P.base,P.base_relapse,P.stack,P.stack_relapse];
-  T('outtable',['Metric','Today','Plan','Plan after relapse','+ height stack','Stack after relapse','Male norm'],O.map(([n,k,norm])=>{
+  T('outtable',['Metric','Today','Plan','Plan after relapse','+ height steps','+ height steps, after relapse','Male norm'],O.map(([n,k,norm])=>{
     const cells=cols.map(c=>{ if(n.startsWith('Overjet')) return f1(c.m.overjet)+' / '+f1(c.m.overbite); if(n.startsWith('FMA')) return f1(c.m.FMA)+' / '+f1(c.m.FMA_contour); return f1(c.m[k]); });
     return [{t:n,cls:''},...cells,norm]; }).concat([
     [{t:'Mandible front-to-back: B / Pog (mm)',cls:''},'—',...cols.slice(1).map(c=>c.B?sg(c.B[0])+' / '+sg(c.Pog[0]):'—'),'≥ −2 (airway)'],
-    [{t:'Subpupil (under-eye) z, fixed vertical, 0/3.9/8°',cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl_fixed_preop_Sn|Subpupil' R to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0'],
-    [{t:'Incisor FA point to GALL (mm), 0/3.9/8°',cls:''},...cols.map(c=>c.gall.U1FA.map(sg).join(' / ')),'0 to −2'],
-    [{t:"Soft chin to Sn vertical z, 0/3.9/8°",cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl|Soft-tissue pogonion (Pog') to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0']]));
+    [{t:'Under-eye z (head tilt 0 / 3.9 / 8°)',cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl_fixed_preop_Sn|Subpupil' R to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0'],
+    [{t:'Front tooth to forehead line, mm (tilt 0 / 3.9 / 8°)',cls:''},...cols.map(c=>c.gall.U1FA.map(sg).join(' / ')),'0 to −2'],
+    [{t:'Chin in profile z (tilt 0 / 3.9 / 8°)',cls:''},...cols.map(c=>{const z=(c.tvl["arnett_tvl|Soft-tissue pogonion (Pog') to TVL"]||{}).z; return z?z.map(sg).join(' / '):'—';}),'0']]));
 
   /* height segments + ladder */
   const H=P.height_table, hc=['baseline','base','stack','stack_relapse'];
   const seg=[['Midface N′–Sn','NSn','56.6 (derived)'],['Upper lip Sn–Sto','ULL','24.4 ± 2.5'],['Lips parted (gap)','ILG','2.4 ± 1.1'],['Lower lip + chin','Stmi','54.3 ± 2.4'],['Lower third Sn–Me′','SnMe','81.1 ± 4.7'],['Total N′–Me′','sNMe','121.3 ± 6.8'],['Incisor display','disp','2–4'],['Facial index (soft)','FI','88.5 ± 5.1']];
-  T('segtable',['Segment (mm)','Today','Plan','+ stack','Stack, relapsed','Norm'],seg.map(([n,k,norm])=>[{t:n,cls:''},...hc.map(c=>{ const v=H[c][k], z=H[c][k+'_z']; return f1(v)+(z!=null?` <span class="sub">(${sg(z)})</span>`:''); }),norm]));
+  T('segtable',['Segment (mm)','Today','Plan','+ height steps','+ height steps, after relapse','Norm'],seg.map(([n,k,norm])=>[{t:n,cls:''},...hc.map(c=>{ const v=H[c][k], z=H[c][k+'_z']; return f1(v)+(z!=null?` <span class="sub">(${sg(z)})</span>`:''); }),norm]));
   const maxv=Math.max(...P.ladder.map(r=>r.soft_surgery));
-  T('laddertable',['Height lever','At surgery','Retained','Cumulative N′–Me′ (retained)'],P.ladder.map(r=>[{t:r.step.replace('(base)','(plan)'),cls:''},sg(r.soft_surgery),sg(r.soft_retained),{t:`${f1(r.cum_soft)} (${f1(r.cum_soft_ret)}) <div class="hbar" style="width:${Math.round(100*r.soft_surgery/maxv)}%"></div><div class="hbar ret" style="width:${Math.round(100*r.soft_retained/maxv)}%;margin-top:2px"></div>`,cls:'num barcell'}]));
+  T('laddertable',['Step','At surgery','Retained','Cumulative N′–Me′ (retained)'],P.ladder.map(r=>[{t:r.step.replace('(base)','(plan)').replace(/->/g,'→'),cls:''},sg(r.soft_surgery),sg(r.soft_retained),{t:`${f1(r.cum_soft)} (${f1(r.cum_soft_ret)}) <div class="hbar" style="width:${Math.round(100*r.soft_surgery/maxv)}%"></div><div class="hbar ret" style="width:${Math.round(100*r.soft_retained/maxv)}%;margin-top:2px"></div>`,cls:'num barcell'}]));
   const fi=H.stack.FI, fr=H.stack_relapse.FI;
   const norms=[['North American white (Farkas)',88.5,5.1],['North Indian (Choudhary 2026)',88.15,6.88],['US workforce, all races (NIOSH, sellion-based)',85.5,null],['US Caucasian <30 (NIOSH model)',83.5,null],['Chinese workers (Du 2008)',79.5,null],['Central Serbian',94.0,7.0]];
-  T('indextable',['Reference','Norm','Stack','Relapsed'],norms.map(([n,m,s])=>[{t:n,cls:''},f1(m)+(s?' ± '+f1(s):''),s?'z '+sg((fi-m)/s):sg(fi-m)+' pts',s?'z '+sg((fr-m)/s):sg(fr-m)+' pts']));
+  T('indextable',['Reference','Norm','+ height steps','After relapse'],norms.map(([n,m,s])=>[{t:n,cls:''},f1(m)+(s?' ± '+f1(s):''),s?'z '+sg((fi-m)/s):sg(fi-m)+' pts',s?'z '+sg((fr-m)/s):sg(fr-m)+' pts']));
 
   /* expansion + no-Le-Fort */
   const ex=r=>{ const bad=r.Pog&&r.Pog[0]<-2; return [{t:r.name,cls:''},f1(r.rot)+'°',{t:r.B?sg(r.B[0])+' / '+sg(r.Pog[0]):'0 / 0',cls:'num '+(bad?'badc':'good')},f1(r.m.N_Me),f1(r.m.ANB)+'°',f1(r.m.overjet)+' / '+f1(r.m.overbite),f1(r.m.A_to_Nperp),f1(r.m.incisor_display_Sto_U1tip)]; };
@@ -405,6 +1369,7 @@ window.SimpleOrbit=function(camera,el){
 <script>
 (function(){
 const D=window.CEPH; const LM=D.landmarks; const MS=D.measurements;
+const N_MEAS=MS.length; /* 165 measurements, before the 21 reference-line rows are pushed */
 /* reference-line distances as searchable rows (GALL, glabella verticals, TVL) */
 for(const [pt,lms] of [['A',['A']],['U1FA',['U1FA']],['U1tip',['U1tip']],['B',['B']],['Pog',['Pog']],['RimR',['RimR']],['RimL',['RimL']]]){
   const r=D.reftable[pt]; if(!r) continue;
@@ -415,14 +1380,14 @@ for(const [pt,lms] of [['A',['A']],['U1FA',['U1FA']],['U1tip',['U1tip']],['B',['
 }
 const $=id=>document.getElementById(id);
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const f1=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1); };
-const sgn=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return (v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1); };
+const f1=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return (Object.is(v,-0)?0:v).toFixed(1).replace('-','−'); };
+const sgn=x=>{ if(x==null) return '—'; const v=+x.toFixed(1); return ((v>0?'+':'')+(Object.is(v,-0)?0:v).toFixed(1)).replace('-','−'); };
 const zcls=z=>z==null?'na':(Math.abs(z)<1?'ok':(Math.abs(z)<2?'warn':'bad'));
 
 /* ---------- verdict tiles ---------- */
 const K=D.keys;
-$('meta-lm').textContent=Object.keys(LM).length+' landmarks'; if($('i-lm'))$('i-lm').textContent=Object.keys(LM).length; if($('i-ms'))$('i-ms').textContent=MS.length; $('meta-ms').textContent=MS.length+' measurements'; $('h-tables').textContent=MS.length+' measurements against adult-male norms';
-$('h-verdict').textContent='Class III jaw discrepancy of 8–12 mm on a short, wide, horizontal-growth face: a mildly retrusive maxilla (1–4 mm in the Frankfort frame, 5–8 mm in a chin-down natural head position), a mandible of normal length rotated forward so that the chin sits 4–11 mm ahead of a balanced male, and a maxilla 10 mm too narrow';
+$('meta-lm').textContent=Object.keys(LM).length+' landmarks'; if($('i-lm'))$('i-lm').textContent=Object.keys(LM).length; if($('i-ms'))$('i-ms').textContent=N_MEAS; $('meta-ms').textContent=N_MEAS+' measurements'; $('h-tables').textContent='Every measurement.';
+$('h-verdict').textContent='An 8–12 mm jaw mismatch.';
 const row=k=>MS.find(m=>m.key===k)||{};
 const CoGoRow=row('Jarabak|Co-Go ramus height');
 const pitch=D.frame.pitch, sinp=Math.sin(pitch*Math.PI/180), Gs=LM["G'"].p[1];
@@ -431,7 +1396,7 @@ const A_nhp=nhp('A',K.A_GALL), U1_nhp=nhp('U1FA',K.U1FA_GALL), Pog_nhp=nhp('Pog'
 const PogS=row("Arnett TVL|Soft-tissue pogonion (Pog') to TVL"), FacA=row("Arnett harmony|Facial angle G'-Sn-Pog'"), rimR=row("Arnett TVL|Soft-tissue orbital rim' R to TVL"), rimL=row("Arnett TVL|Soft-tissue orbital rim' L to TVL"), chkR=row("Arnett TVL|Cheekbone' R to TVL"), chkL=row("Arnett TVL|Cheekbone' L to TVL"), spR=row("Arnett TVL|Subpupil' R to TVL"), spL=row("Arnett TVL|Subpupil' L to TVL");
 const WitsF=row('Wits|Wits appraisal AO-BO, Jacobson functional OP (premolar-molar contacts)');
 const tiles=[
- ['Chin position: Pog to N-perp', sgn(K.Pog_Nperp)+' mm (FH) · ≈ '+sgn(K.Pog_Nperp-(0-LM.Pog.p[1])*sinp)+' in NHP','norm −0.3 ± 3.8 · SNB '+f1(K.SNB)+'° (norm 80 ± 2) · facial depth '+f1(K.facial_depth)+'° (norm 89 ± 3) · Pog to GALL '+sgn(D.reftable.Pog['Andrews GALL'])+' (a balanced male ≈ −9) · Co–Gn '+f1(K.Co_Gn*1.08)+' mm (norm 134 ± 7)','bad','normal length, rotated forward'],
+ ['Chin position: Pog to N-perp', sgn(K.Pog_Nperp)+' mm · ≈ '+sgn(K.Pog_Nperp-(0-LM.Pog.p[1])*sinp)+' at scan tilt','norm −0.3 ± 3.8 · SNB '+f1(K.SNB)+'° (norm 80 ± 2) · facial depth '+f1(K.facial_depth)+'° (norm 89 ± 3) · Pog to GALL '+sgn(D.reftable.Pog['Andrews GALL'])+' (a balanced male ≈ −9) · Co–Gn '+f1(K.Co_Gn*1.08)+' mm (norm 134 ± 7)','bad','normal length, rotated forward'],
  ['Maxilla AP: A to N-perp / GALL', sgn(K.A_Nperp)+' / '+sgn(K.A_GALL)+' mm','norm +1.1 ± 2.7 · SNA '+f1(K.SNA)+'° (norm 82–84) · a balanced male\'s A point is ≈ 7–10 mm behind the GALL, so the deficit is 1–4 mm here, ≈ '+f1(Math.abs(A_nhp)-10)+'–'+f1(Math.abs(A_nhp)-7)+' mm at the scanned head pitch ('+sgn(A_nhp)+')','warn','mildly retrusive'],
  ['ANB / Wits', f1(K.ANB)+'° / '+f1(K.Wits)+' to '+f1(WitsF.value)+' mm','norms 2 ± 2° / −1 ± 2 mm · Wits '+f1(K.Wits)+' on the incisor–molar plane, '+f1(WitsF.value)+' on the Jacobson functional plane (definition-matched but a short, low-confidence plane) — Class III on both','bad','Class III'],
  ['Soft-tissue chin to Sn vertical', sgn(PogS.value)+' mm','Arnett male norm −3.5 ± 1.8 (z '+sgn(PogS.z)+') · G′–Sn–Pog′ '+f1(FacA.value)+'° (norm 169 ± 3) — straight-to-concave','bad','chin dominant'],
@@ -445,8 +1410,10 @@ const tiles=[
  ['Nose / lips', 'tip '+f1(D.reftable.Prn['Arnett TVL through Sn'])+' mm · NLA '+f1(K.nasolabial)+'°','projection norm 17.4 ± 1.7 · NLA 106 ± 8 — columella point conf 0.5, columella near-horizontal, so the angle is approximate (59–73° across constructions); the acute angle is the proclined incisor pushing the lip','warn','short nose, acute NLA'],
  ['Symmetry', 'bony chin '+f1(Math.abs(LM.Pog.p[0]))+' mm','soft-tissue chin '+f1(Math.abs(LM["Pog'"].p[0]))+' mm to the right · a 1.6° roll between the ear–orbit plane and the jaws (left molar 1.4 mm lower in the FH frame; level in the scanner frame) — head roll or real cant, undecided · condyles and gonia left–right within ~2.5 mm; articulare 3.8 mm higher on the left (conf 0.6)','ok','sub-surgical'],
 ];
-$('tiles').innerHTML=tiles.map(t=>`<div class="tile ${t[3]}"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="n">${t[2]}</div><span class="pill ${t[3]}">${t[4]}</span></div>`).join('');
-$('headline').innerHTML=D.headline.map(h=>`<li>${h.replace(/^\d+\.\s*/,'')}</li>`).join('');
+[['Lower jaw and chin','rotated forward'],['Upper jaw, front to back','slightly back'],['How the jaws meet','lower ahead (Class III)'],['Chin in profile','chin leads'],['Under the eyes','slightly flat'],['Jaw angle','flat, horizontal growth'],['Face height',null],['Back-of-jaw height','long'],['Upper-jaw width','narrow; confirm on models'],['Front teeth',null],['Face shape',null],[null,'short nose, sharp lip angle'],[null,'near-symmetric']].forEach((r,i)=>{ const t=tiles[i]; if(!t) return; if(r[0]&&r[0]!==t[0]){ t[2]=t[0]+' · '+t[2]; t[0]=r[0]; } if(r[1]) t[4]=r[1]; });
+$('tiles').innerHTML=tiles.map(t=>`<div class="tile ${t[3]}"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><span class="pill ${t[3]}">${t[4]}</span><details class="n"><summary>Norms</summary>${t[2]}</details></div>`).join('');
+const tidy=h=>h.replace(/^\d+\.\s*/,'').replace('a prognathic mandible','a forward-rotated mandible').replace(/ deg\b/g,'°').replace(/x1\.08/g,'×1.08').replace(/Bjork/g,'Björk').replace(/->/g,'→').replace(/(^|[\s(\/])-(?=\d)/g,'$1−');
+$('headline').innerHTML=D.headline.map(h=>`<li>${tidy(h)}</li>`).join('');
 
 /* ---------- GALL ---------- */
 const G=D.gall;
@@ -468,7 +1435,7 @@ function renderTables(){
     const rows=MS.filter(m=>m.analysis===a&&(!q||(m.measure+' '+m.note+' '+m.analysis+' '+m.lm.join(' ')).toLowerCase().includes(q)));
     if(!rows.length) return ''; n+=rows.length;
     return `<h3 style="margin:14px 0 6px">${a}</h3><div class="tblwrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Male norm</th><th>SD</th><th>z</th><th>Note</th></tr></thead><tbody>`+
-      rows.map(m=>`<tr data-key="${m.key}"><td>${m.measure}</td><td class="num">${f1(m.value)} ${m.unit}</td><td class="num">${m.norm==null?'—':f1(m.norm)}</td><td class="num">${m.sd==null?'—':f1(m.sd)}</td><td class="num"><span class="pill ${zcls(m.z)}">${m.z==null?'—':sgn(m.z)}</span></td><td class="sub">${m.note}</td></tr>`).join('')+'</tbody></table></div>';
+      rows.map(m=>`<tr data-key="${m.key}" tabindex="0"><td>${m.measure}</td><td class="num">${f1(m.value)} ${m.unit}</td><td class="num">${m.norm==null?'—':f1(m.norm)}</td><td class="num">${m.sd==null?'—':f1(m.sd)}</td><td class="num"><span class="pill ${zcls(m.z)}">${m.z==null?'—':sgn(m.z)}</span></td><td class="sub">${m.note}</td></tr>`).join('')+'</tbody></table></div>';
   }).join('');
   $('count').textContent=n+' shown';
 }
@@ -477,7 +1444,7 @@ $('tablist').addEventListener('click',e=>{const tr=e.target.closest('tr[data-key
 
 /* ---------- 3D ---------- */
 const canvas=$('c'), stage=$('stage'), labelsEl=$('labels');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputEncoding=THREE.sRGBEncoding;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputEncoding=THREE.sRGBEncoding; renderer.setClearColor(0x050c18,1);
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(32,1,1,3000);
 const controls=new SimpleOrbit(camera,canvas); controls.autoRotate=!matchMedia('(prefers-reduced-motion: reduce)').matches; controls.autoRotateSpeed=1.0;
@@ -496,7 +1463,7 @@ function loadMesh(){
     const idx=new Uint32Array(b2a(M.idx));
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setIndex(new THREE.BufferAttribute(idx,1)); g.computeVertexNormals();
     mesh=new THREE.Mesh(g,matSolid); scene.add(mesh);
-    $('status').textContent=(M.ni/3).toLocaleString()+' triangles · 1.35 mm grid, 320 HU iso-surface · bone only · thin bone (ANS, sella floor) partly missing';
+    $('status').textContent=(M.ni/3).toLocaleString()+' triangles · bone only · thin bone partly missing';
     $('meta-mesh').textContent=(M.ni/3).toLocaleString()+'-triangle model';
   }catch(e){ $('status').textContent='model failed to load'; }
 }
@@ -528,13 +1495,13 @@ function dot(p,c,r){ const m=new THREE.Mesh(new THREE.SphereGeometry(r||1.6,12,1
 function selectLandmark(n){
   selectedLM=n; selectedMS=null; clearHi(); dot(P(n),0x7cffb2,2.2);
   for(const k in labels) labels[k].classList.toggle('sel',k===n), labels[k].classList.remove('dim');
-  const l=LM[n]; $('p-title').textContent=n; $('p-sub').textContent=`lat ${sgn(l.p[0])} · sup ${sgn(l.p[1])} · ant ${sgn(l.p[2])} mm · conf ${l.conf}`;
-  const ms=MS.filter(m=>m.lm.includes(n)); $('p-desc').textContent=ms.length? ms.length+' measurements use this landmark. Click one to draw it.':'No tabulated measurement uses this landmark directly.';
+  const l=LM[n]; $('p-title').textContent=n; $('p-sub').textContent=`lat ${sgn(l.p[0])} · sup ${sgn(l.p[1])} · ant ${sgn(l.p[2])} mm · confidence ${l.conf}`;
+  const ms=MS.filter(m=>m.lm.includes(n)); $('p-desc').textContent=ms.length? ms.length+' measurements use this landmark. Pick one to draw it.':'No measurement uses this landmark.';
   $('p-list').innerHTML=ms.map(m=>mrow(m)).join('');
   $('p-list').querySelectorAll('.mrow').forEach(el=>el.addEventListener('click',()=>selectMeasure(el.dataset.key,false)));
 }
 function mrow(m){ const hasZ=m.z!=null; const pct=hasZ?Math.max(4,Math.min(96,50+m.z*12)):50;
-  return `<div class="mrow" data-key="${m.key}"><span class="name">${m.measure}</span><span class="val">${f1(m.value)} ${m.unit}</span><span class="an">${m.analysis}${m.norm!=null?' · norm '+f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''):''}</span><span class="z"><span class="pill ${zcls(m.z)}">${hasZ?'z '+sgn(m.z):'no z'}</span></span>${hasZ?`<span class="bar"><b></b><i style="left:${pct}%"></i></span>`:''}</div>`; }
+  return `<div class="mrow" data-key="${m.key}" tabindex="0"><span class="name">${m.measure}</span><span class="val">${f1(m.value)} ${m.unit}</span><span class="an">${m.analysis}${m.norm!=null?' · norm '+f1(m.norm)+(m.sd!=null?' ± '+f1(m.sd):''):''}</span><span class="z"><span class="pill ${zcls(m.z)}">${hasZ?'z '+sgn(m.z):'no z'}</span></span>${hasZ?`<span class="bar"><b></b><i style="left:${pct}%"></i></span>`:''}</div>`; }
 function selectMeasure(key,scroll){
   const m=MS.find(x=>x.key===key); if(!m) return; selectedMS=key; clearHi();
   if(m.value==null||!m.lm.length){ for(const k in labels){labels[k].classList.remove('sel');labels[k].classList.remove('dim');} $('p-title').textContent=m.measure; $('p-sub').textContent=m.analysis; $('p-desc').textContent=(m.value==null?'Not measured — ':'')+(m.note||'')+' Nothing to draw for this row.'; $('p-list').innerHTML=mrow(m); document.querySelectorAll('tr[data-key]').forEach(tr=>tr.classList.toggle('sel',tr.dataset.key===key)); return; }
@@ -548,7 +1515,7 @@ function selectMeasure(key,scroll){
   if(scroll) document.getElementById('viewer').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
 }
 /* views & buttons */
-function view(w){ const d=330; const t=controls.target; const p={front:[0,0,d],side:[d,0,0],three:[d*.7,d*.22,d*.7]}[w]; camera.position.set(t.x+p[0],t.y+p[1],t.z+p[2]); controls.setFromPosition(); controls.update(); }
+function view(w){ const d=440; const t=controls.target; const p={front:[0,0,d],side:[d,0,0],three:[d*.7,d*.22,d*.7]}[w]; camera.position.set(t.x+p[0],t.y+p[1],t.z+p[2]); controls.setFromPosition(); controls.update(); }
 $('b-front').onclick=()=>view('front'); $('b-side').onclick=()=>view('side'); $('b-three').onclick=()=>view('three'); view('three');
 $('b-spin').onclick=e=>{const on=e.currentTarget.getAttribute('aria-pressed')==='true'; controls.autoRotate=!on; spinBefore=null; e.currentTarget.setAttribute('aria-pressed',String(!on));}; $('b-spin').setAttribute('aria-pressed',String(controls.autoRotate));
 $('b-bone').onclick=e=>{showBone=!showBone;e.currentTarget.setAttribute('aria-pressed',showBone);};
@@ -557,9 +1524,10 @@ $('b-refs').onclick=e=>{refG.visible=!refG.visible;e.currentTarget.setAttribute(
 $('b-xray').onclick=e=>{ if(!mesh) return; const on=mesh.material===matSolid; mesh.material=on?matXray:matSolid; e.currentTarget.setAttribute('aria-pressed',on); };
 controls.addEventListener('start',()=>{ if(controls.autoRotate){controls.autoRotate=false;$('b-spin').setAttribute('aria-pressed','false');} });
 function size(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
-addEventListener('resize',size); size();
+addEventListener('resize',size); if('ResizeObserver' in window) new ResizeObserver(size).observe(stage); size();
 const v=new THREE.Vector3();
-(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera);
+let onScreen=true; if('IntersectionObserver' in window) new IntersectionObserver(es=>{onScreen=es[es.length-1].isIntersecting;}).observe(stage);
+(function loop(){ requestAnimationFrame(loop); if(!onScreen) return; controls.update(); renderer.render(scene,camera);
   const w=stage.clientWidth,h=stage.clientHeight; const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
   for(const [n,el] of Object.entries(labels)){ const l=LM[n]; const show=(l.group==='bone'?showBone:showSoft);
     if(!show){ el.style.display='none'; continue; }
@@ -568,5 +1536,74 @@ const v=new THREE.Vector3();
 })();
 })();
 </script>
-
-</body></html>
+<script>
+/* Script E: runs after script C. Analysis chips, the closing diagnosis cell, a first landmark in the
+   panel, figures bound to data.js / plan.js, and full-note tooltips on the clamped table notes. */
+(function(){
+  var sel=document.getElementById('an-sel'), box=document.getElementById('an-chips');
+  if(!sel||!box||sel.options.length<2) return;
+  box.setAttribute('role','group'); box.setAttribute('aria-label','Filter by analysis');
+  var frag=document.createDocumentFragment();
+  Array.prototype.forEach.call(sel.options,function(o){
+    var b=document.createElement('button');
+    b.type='button'; b.className='chip-tab'; b.textContent=o.value===''?'All':o.textContent;
+    b.setAttribute('data-value',o.value); b.setAttribute('aria-pressed',String(sel.value===o.value));
+    b.addEventListener('click',function(){ sel.value=o.value; sel.dispatchEvent(new Event('change')); });
+    frag.appendChild(b);
+  });
+  box.appendChild(frag);
+  function sync(){ Array.prototype.forEach.call(box.querySelectorAll('.chip-tab'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-value')===sel.value)); }); }
+  sel.addEventListener('change',sync);
+  var tb=sel.closest('.toolbar'); if(tb) tb.classList.add('has-chips');
+  sel.tabIndex=-1; sel.setAttribute('aria-hidden','true');
+  var c=document.getElementById('count'); if(c&&!c.hasAttribute('aria-live')) c.setAttribute('aria-live','polite');
+})();
+(function(){
+  /* diagnosis grid: a closing cell after the last tile opens the technical findings */
+  var tiles=document.getElementById('tiles'), fd=document.getElementById('findings');
+  if(tiles&&fd&&tiles.children.length){
+    var a=document.createElement('a'); a.className='tile-cta'; a.href='#findings';
+    a.innerHTML='All five findings, in full<svg class="arw" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>';
+    a.addEventListener('click',function(){ fd.open=true; });
+    tiles.appendChild(a);
+  }
+  /* viewer: start with a landmark selected so the panel shows real rows */
+  var first=document.getElementById('lbl-A');
+  if(first&&window.MESH) first.click();
+})();
+(function(){
+  /* figures in headings, strips and captions: the static text is the fallback, data wins */
+  var C=window.CEPH, P=window.PLAN; if(!C) return;
+  var MS=C.measurements||[], REF='Reference lines';
+  var counts={
+    analyses:function(){ var s={}; MS.forEach(function(m){ if(m.analysis!==REF) s[m.analysis]=1; }); return Object.keys(s).length; },
+    measurements:function(){ return MS.filter(function(m){ return m.analysis!==REF; }).length; }
+  };
+  function path(spec){ var k=spec.split('/'), o=k[0]==='CEPH'?C:(k[0]==='PLAN'?P:null); for(var i=1;o!=null&&i<k.length;i++) o=o[k[i]]; return o; }
+  function minus(t){ return t.replace('-','−'); }
+  function sg1(v){ var r=+(+v).toFixed(1); if(r===0) r=0; return (r>0?'+':'')+minus(r.toFixed(1)); }
+  var fmt={ int:function(v){ return String(Math.round(v)); }, f1:function(v){ return minus((+v).toFixed(1)); },
+            f2:function(v){ return minus((+v).toFixed(2)); }, sg1:sg1 };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bind]'),function(el){
+    var spec=el.getAttribute('data-bind'), f=el.getAttribute('data-fmt')||'f1', v;
+    try{ v=spec.indexOf('count:')===0?counts[spec.slice(6)]():path(spec); }catch(e){ return; }
+    if(typeof v!=='number'||!isFinite(v)) return;
+    if(f==='sgs'){
+      var t=sg1(v), s0=t.charAt(0);
+      if(s0==='+'||s0==='−'){ el.textContent=''; var g=document.createElement('span'); g.className='sgn'; g.textContent=s0; el.appendChild(g); el.appendChild(document.createTextNode(t.slice(1))); }
+      else el.textContent=t;
+      return;
+    }
+    el.textContent=(fmt[f]||fmt.f1)(v);
+  });
+})();
+(function(){
+  /* analysis notes are clamped to one line; the full text is the tooltip (and the panel on click) */
+  var list=document.getElementById('tablist'); if(!list) return;
+  function titles(){ var c=list.querySelectorAll('td.sub:not([title])'); for(var i=0;i<c.length;i++) c[i].title=c[i].textContent; }
+  titles();
+  if('MutationObserver' in window) new MutationObserver(titles).observe(list,{childList:true});
+})();
+</script>
+</body>
+</html>
